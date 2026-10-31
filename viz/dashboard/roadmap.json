@@ -109,7 +109,9 @@
     "9d, do hunters split into two kinds? FAIL by the rule, with the first real split: D 5.9 and 6.7 at a gut of 0.11 on fresh seeds, but they take turns rather than live together, and the test of living together was set badly",
     "9e, is that split made by the rich start of each world? FAIL by the rule: it repeated in kind and a lean start erased it, but meat eaters vanished, not plant eaters as I guessed",
     "10a, is there a world that lasts? PASS with a caveat: every world so far was a boom and bust hidden by restarts; hand-written animals last when plants spread at 0.2, near the slot caps",
-    "10b, do trained brains last too? (training)",
+    "10b, do trained brains last too? FAIL on survival: 0.000 of worlds at step 2,000; the world lasts, hunters don't",
+    "10c, does a big enough meal let trained hunters last? FAIL: 0.066 and 0.098 of worlds at a meal of 250, none at 100; worlds fill with hunters or lose them all. A probe shows trained grazers are what kill hunters",
+    "10d, can a viewer's idea make a world last? FAIL: 0.000 of worlds at step 2,000 at meals of 25 and 100, grazers still at the cap",
     "A food web: mid-predators and scavengers (Stage 5b)",
     "Maps of 128-256 cells, sharded across the GB10",
     "Armour and camouflage genes"

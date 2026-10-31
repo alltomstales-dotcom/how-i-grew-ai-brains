@@ -74,10 +74,11 @@ side by side: plant eaters boom and crash, meat eaters outlast them, and worlds 
 
 **Then the biggest catch so far.** [Every world in this project has been dying](docs/specs/2026-10-31-persist-design.md), in about
 150-300 steps, and restarts hid it. Plants that spread faster give a world that lasts for simple hand-written animals, though
-it may be leaning on the slot caps. Whether [trained brains last too](docs/specs/2026-10-31-lasting-brains-design.md) is training
-now, with its bar already public.
+it may be leaning on the slot caps. [Trained brains don't](docs/specs/2026-10-31-lasting-brains-design.md): the world lasts and
+the hunters die. [Swapping in hand-written animals](docs/specs/2026-10-31-big-meals-design.md) showed why: trained grazers are
+what kill them. That's where this stands, and the question is open: [what would you change?](SUGGESTIONS.md)
 
-**So far, [8 stages pass and 14 fail](docs/results.md).** The failures have often taught more than the passes.
+**So far, [8 stages pass and 17 fail](docs/results.md).** The failures have often taught more than the passes.
 
 ## Watch it
 

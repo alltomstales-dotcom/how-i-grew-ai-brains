@@ -60,6 +60,7 @@ def main(argv=None) -> int:
     p.add_argument("--evolved", action="store_true")
     p.add_argument("--steps", type=int, help="play this long instead of the run's own max_steps")
     p.add_argument("--bot-grazers", action="store_true", help="probe only: grazers walk to the nearest plant in view; writes nothing")
+    p.add_argument("--bot-hunters", action="store_true", help="probe only: hunters walk to the nearest grazer in view; writes nothing")
     p.add_argument("--seed-rate", type=float, help="probe only: override how fast plants spread; writes nothing")
     args = p.parse_args(argv)
     run_dir = Path(args.run_dir)
@@ -70,6 +71,8 @@ def main(argv=None) -> int:
         cfg = replace(cfg, seed_rate=args.seed_rate)
     if args.bot_grazers:
         prey_pi = chase_policy(0)
+    if args.bot_hunters:
+        pred_pi = chase_policy(2)
     rows = curve(world, cfg, prey_pi, pred_pi, jax.random.PRNGKey(EVAL_SEED), args.episodes, pool)
     table = [{"step": int(t), "both_share": float(rows[t, 0] / args.episodes), "hunter_worlds": float(rows[t, 1] / args.episodes),
               "hunters": float(rows[t, 2] / args.episodes), "grazers": float(rows[t, 3] / args.episodes),
@@ -78,7 +81,7 @@ def main(argv=None) -> int:
              for t in [*range(0, cfg.max_steps, max(50, cfg.max_steps // 10)), cfg.max_steps - 1]]
     last = table[-1]
     out = {"curve": table, "both_at_end": last["both_share"], "pass": bool(last["both_share"] >= BOTH_TARGET)}
-    if args.seed_rate is None and not args.bot_grazers:
+    if args.seed_rate is None and not args.bot_grazers and not args.bot_hunters:
         (run_dir / "persist.json").write_text(json.dumps(out, indent=1))
     for r in table:
         print(f"step {r['step']:3d}: both species in {r['both_share']:.3f} of worlds; hunters {r['hunters']:.2f}, grazers {r['grazers']:.1f} at {r['grazer_energy']:.1f} energy; plants {r['plant_cover']:.2f}, unbitten {r['unbitten']:.3f}; births {r['grazer_births']:.2f}, deaths {r['grazer_deaths']:.2f}")

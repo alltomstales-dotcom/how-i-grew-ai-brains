@@ -22,3 +22,18 @@ Both must hold on both seeds:
 It didn't pass: 0.000 at step 1,999, with hunters gone by step 600 (0.73 per world at step 200, in 0.316 of worlds) and grazers at the cap of 96 with 39 of 40 energy, among plants at 0.90 of the map. So test 1 stands.
 
 Reported, not bars: hunter and grazer numbers against the slot caps (96 and 32), since stage 10a's worlds sat on them; plant cover; whether numbers cycle; the plant-spread gene over training, since evolved plant pools may undo the world's fast spread.
+
+## Result (2026-10-31): FAIL on the first bar, on both seeds
+
+| 256 seeds, evolved | seed 0 | seed 1 | bar |
+|---|---|---|---|
+| both species alive at step 1,999 | 0.000 | 0.000 | at least 0.5: missed |
+| fixed chaser against learned hunters | 0.75x | 0.65x | at most 1.0: met |
+
+The world lasts and the hunters don't. Both species are together in 0.062 and 0.059 of worlds at step 200 and none from step 600. Grazers sit at the cap of 96 with about 29 of 40 energy, on a map 0.91 to 0.92 plants. Learned hunters are still real hunters, catching 0.0062 per hunter-step, about 0.16 energy per step at 25 a meal.
+
+Hand-written animals lasted in this world in stage 10a. The likely difference is that trained grazers flee, and hand-written ones walk to the nearest plant whatever is near. That's my reading, and I haven't tested it directly.
+
+Also seen, in training metrics: plants' spread gene rose from 0.50 to 0.89 by update 31 and stayed; grazers' breeding gene fell to about 0.08; and hunters' rose from 0.50 to 0.81 and 0.78, not explained here.
+
+So this world has plenty of grazers and too little income for hunters. That makes meal size a fair test at last.

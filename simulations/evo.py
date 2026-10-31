@@ -205,6 +205,31 @@ class LastingConfig(EvoConfig):
 
 
 @dataclass(frozen=True)
+class LastingM100Config(LastingConfig):
+    """Stage 10c: bigger meals, with the energy cap raised so they aren't clipped."""
+    catch_energy: float = 100.0
+    pred_energy_cap: float = 200.0
+
+
+@dataclass(frozen=True)
+class LastingM250Config(LastingConfig):
+    catch_energy: float = 250.0
+    pred_energy_cap: float = 500.0
+
+
+@dataclass(frozen=True)
+class LastingAmbushConfig(AmbushConfig):
+    """Stage 10d: stage 8b's walking costs and thickets, with plants that last, so dodging costs grazers something."""
+    seed_rate: float = 0.2
+
+
+@dataclass(frozen=True)
+class LastingAmbushM100Config(LastingAmbushConfig):
+    catch_energy: float = 100.0
+    pred_energy_cap: float = 200.0
+
+
+@dataclass(frozen=True)
 class OmniConfig(EvoConfig):
     """Stage 9a: hunters keep their diet gene's share of every catch, and the rest of a grazer's share of plants."""
     omnivore: bool = True

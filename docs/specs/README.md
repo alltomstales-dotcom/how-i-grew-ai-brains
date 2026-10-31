@@ -27,7 +27,9 @@ replaced with neutral wording; the engineering and the results are unchanged.
 | [Two diets](2026-10-31-two-diets-design.md) | 9d: do hunters split into two kinds? | FAIL by the rule, with a real split; they take turns |
 | [Rich start](2026-10-31-bonanza-design.md) | 9e: is that split made by each world's rich start? | FAIL by the rule, narrowly; a lean start erases it |
 | [A world that lasts](2026-10-31-persist-design.md) | 10a: is there one, for hand-written animals? | PASS, with a caveat: near the slot caps |
-| [Lasting brains](2026-10-31-lasting-brains-design.md) | 10b: do trained brains last too? | Training; no result yet |
+| [Lasting brains](2026-10-31-lasting-brains-design.md) | 10b: do trained brains last too? | FAIL on survival; the world lasts, hunters don't |
+| [Big meals](2026-10-31-big-meals-design.md) | 10c: does a big enough meal let them last? | FAIL; trained grazers are what kill hunters |
+| [Costly dodging](2026-10-31-costly-dodging-design.md) | 10d: can walking costs and thickets make a world last? | FAIL |
 
 The league and predator-stall work of Stage 3b is written up in the [roadmap](../roadmap.md).
 A summary of all of it is in [results.md](../results.md).
