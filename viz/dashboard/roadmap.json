@@ -107,7 +107,9 @@
     "9b, how bad must a gut be to keep a hunter hunting? PASS on two seeds: diet 0.90 at a gut of 0.03, 0.87 at 0.08, 0.07 at 0.20; a sharp switch, and few hunters",
     "9c, do winters make real omnivores? FAIL on two seeds: diet 0.11 and plants 0.93 of hunter energy; winter also cut grazers from 31 to 11",
     "9d, do hunters split into two kinds? FAIL by the rule, with the first real split: D 5.9 and 6.7 at a gut of 0.11 on fresh seeds, but they take turns rather than live together, and the test of living together was set badly",
-    "9e, is that split made by the rich start of each world? (training)",
+    "9e, is that split made by the rich start of each world? FAIL by the rule: it repeated in kind and a lean start erased it, but meat eaters vanished, not plant eaters as I guessed",
+    "10a, is there a world that lasts? PASS with a caveat: every world so far was a boom and bust hidden by restarts; hand-written animals last when plants spread at 0.2, near the slot caps",
+    "10b, do trained brains last too? (training)",
     "A food web: mid-predators and scavengers (Stage 5b)",
     "Maps of 128-256 cells, sharded across the GB10",
     "Armour and camouflage genes"

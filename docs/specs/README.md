@@ -25,7 +25,9 @@ replaced with neutral wording; the engineering and the results are unchanged.
 | [Gut ladder](2026-10-31-gut-ladder-design.md) | 9b: how bad must a gut be to keep a hunter hunting? | PASS on two seeds; a sharp switch, and few hunters |
 | [Winter](2026-10-31-winter-design.md) | 9c: do winters make real omnivores? | FAIL on two seeds; hunters went further toward plants |
 | [Two diets](2026-10-31-two-diets-design.md) | 9d: do hunters split into two kinds? | FAIL by the rule, with a real split; they take turns |
-| [Rich start](2026-10-31-bonanza-design.md) | 9e: is that split made by each world's rich start? | Training; no result yet |
+| [Rich start](2026-10-31-bonanza-design.md) | 9e: is that split made by each world's rich start? | FAIL by the rule, narrowly; a lean start erases it |
+| [A world that lasts](2026-10-31-persist-design.md) | 10a: is there one, for hand-written animals? | PASS, with a caveat: near the slot caps |
+| [Lasting brains](2026-10-31-lasting-brains-design.md) | 10b: do trained brains last too? | Training; no result yet |
 
 The league and predator-stall work of Stage 3b is written up in the [roadmap](../roadmap.md).
 A summary of all of it is in [results.md](../results.md).

@@ -69,10 +69,15 @@ sharp switch and few hunters. [Winters](docs/specs/2026-10-31-winter-design.md) 
 
 **Then, by accident, a split.** After six failed tries to get one population to split in two, hunters at one gut
 [split into plant eaters and meat eaters](docs/specs/2026-10-31-two-diets-design.md), on fresh seeds. They aren't two species
-side by side: plant eaters boom and crash, meat eaters outlast them, and worlds restart from the mixed pool. Whether the rich
-start of each world makes the split is [training now](docs/specs/2026-10-31-bonanza-design.md), with its bar already public.
+side by side: plant eaters boom and crash, meat eaters outlast them, and worlds restart from the mixed pool. A
+[lean start erases it](docs/specs/2026-10-31-bonanza-design.md).
 
-**So far, [7 stages pass and 13 fail](docs/results.md).** The failures have often taught more than the passes.
+**Then the biggest catch so far.** [Every world in this project has been dying](docs/specs/2026-10-31-persist-design.md), in about
+150-300 steps, and restarts hid it. Plants that spread faster give a world that lasts for simple hand-written animals, though
+it may be leaning on the slot caps. Whether [trained brains last too](docs/specs/2026-10-31-lasting-brains-design.md) is training
+now, with its bar already public.
+
+**So far, [8 stages pass and 14 fail](docs/results.md).** The failures have often taught more than the passes.
 
 ## Watch it
 
@@ -101,6 +106,7 @@ The series is on [NeatScienceStuff](https://www.youtube.com/@NeatScienceStuff), 
 | 8 | I gave my AI creatures poisoned food, and they learned to taste | coming Nov 5 |
 | 9 | My AI seemed to learn with no memory. Then I counted the dead worlds. | coming Nov 6 |
 | 10 | I let my AI hunters eat plants. They stopped hunting. | coming Nov 7 |
+| 11 | My AI hunters split in two. Then I found the catch. | coming Nov 8 |
 <!-- videos:end -->
 
 ## Build this with us

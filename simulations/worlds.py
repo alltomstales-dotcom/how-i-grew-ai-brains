@@ -26,6 +26,7 @@ WORLDS = {
     "flank_hills": (evo, evo.FlankHillsConfig),
     "ambush": (evo, evo.AmbushConfig),
     "fickle": (evo, evo.FickleConfig),
+    "lasting": (evo, evo.LastingConfig),
     "omni": (evo, evo.OmniConfig),
     "omni_tough": (evo, evo.OmniToughConfig),
     "omni_neutral": (evo, evo.OmniNeutralConfig),

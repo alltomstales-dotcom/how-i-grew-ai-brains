@@ -49,7 +49,7 @@ Gut 0.14 failed it: D is high (up to 9.42) but the smaller group sits at 0.09 to
 | 200 | 16, 15 | 0, 0 | 0.00 | 0.07, 0.06 | 36, 33 |
 | 300 | 0, 1 | 0, 0 | 0.00 | 0.00 | 12, 10 |
 
-So the two kinds share a world for about the first 50 to 75 steps and then take turns. Plant eaters double on the starting plants and crash by step 100, low on energy. Meat eaters outlast them and then die out too. No world keeps hunters to the end, and these evaluation worlds run on after that, so the grazer decline here may not reflect training, where a world restarts when a species dies out.
+So the two kinds share a world for about the first 50 to 75 steps and then take turns. Plant eaters boom and crash by step 100, low on energy. (Corrected: I first wrote that they "double on the starting plants", but meat eaters double by step 25 too, and so do plant eaters on a lean start, so the doubling may just be starting energy of 60.) Meat eaters outlast them and then die out too. No world keeps hunters to the end, and these evaluation worlds run on after that, so the grazer decline here may not reflect training, where a world restarts when a species dies out.
 
 **What this does and doesn't show.** The pool holds two distinct kinds, steadily, on two fresh seeds, at a separation drift doesn't reach. That is the first split in this project. They aren't two species living side by side. The hypothesis, not yet tested: every restart hands out a rich field of plants, which rewards plant eaters early, while the grazer boom that follows rewards meat eaters, and restarting from a mixed pool is what keeps both going. Stage 9e tests the plant half of that. This also questions earlier hunter results: stage 9b's few hunters look like the same die-out, which I haven't checked.
 

@@ -199,6 +199,12 @@ class FatPreyConfig(EvoConfig):
 
 
 @dataclass(frozen=True)
+class LastingConfig(EvoConfig):
+    """Stage 10b: plants spread fast enough for hand-written animals to last (stage 10a)."""
+    seed_rate: float = 0.2
+
+
+@dataclass(frozen=True)
 class OmniConfig(EvoConfig):
     """Stage 9a: hunters keep their diet gene's share of every catch, and the rest of a grazer's share of plants."""
     omnivore: bool = True
