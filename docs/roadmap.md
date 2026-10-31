@@ -160,6 +160,8 @@ toward small bodies. v6 (60 minutes) was a near miss: without mating, two even s
 strict size matching, prey shrank together. Two foods hold two body sizes apart when lineages
 breed alone; two-parent breeding prevents it. The bar stays where it was.
 
+**Stage 5b, meals worth what the prey stored (built 2026-10-30, training).** From a viewer's comment: a predator's edge is the energy density of its meal. A catch is now worth 1.25x what the grazer held, and hunters can see who is fat. Control: the same sight, with every meal the same. Test (`scripts.meals`, both seeds): hunters eat fatter grazers than the population by at least 1.15x the control's ratio, and meal value falls at least 10% when they cannot see fat. Spec: `docs/specs/2026-10-30-fatprey-design.md`.
+
 ### Stage 6: social intelligence and communication
 
 - **A signal action.** An animal can emit a token that its neighbours see.
@@ -242,6 +244,8 @@ nothing shows which, and it flips at random, so only tasting and remembering can
 feed-forward brain, matched at 150 updates. Test (`scripts.lifetime`, both seeds): at 10-40 steps after a flip the memory brain's good-bite
 share beats the other's by at least 0.10, and beats its own at 0-10 steps by at least 0.05. Spec:
 `docs/specs/2026-10-30-lifetime-design.md`.
+
+**Stage 7d, is the map the memory? (FAIL, 2026-10-30).** No-memory brains seemed to recover after a flip, with the good kind climbing to 0.8 around them. Scattering the grazers barely hurt them (0.035 and 0.076, bar 0.15), so location was not the memory. It was mostly survivorship: their plant pools are 85% shrubs, worlds where the rare kind feeds die, and about nine in ten living worlds at 80+ steps are the lucky kind. The 7c no-memory curve should not be read as recovery; the memory result stands on the wiped control, which used the same plants. Spec: `docs/specs/2026-10-30-scatter-design.md`.
 
 ### Stage 8: toward realism
 

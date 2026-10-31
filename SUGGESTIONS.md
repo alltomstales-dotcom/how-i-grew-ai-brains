@@ -8,7 +8,7 @@ form, or in a comment on [any of the videos](https://www.youtube.com/@NeatScienc
 | Idea | Suggested by | Status | Result |
 |---|---|---|---|
 | Hunters that hide, so they spend less energy chasing | [@rhetkuehne8613](https://www.youtube.com/@rhetkuehne8613), comment on Part 1 | **Tested:** [Stage 8b](docs/specs/2026-10-30-ambush-design.md) | **PASS on two seeds.** Hunters spend 64-65% of their time in thickets (25% of the map), and catch 68-72% less when thickets stop hiding them. But hiding only matches chasing per meal: a one-line chaser catches 1.4-1.7x as much and burns about two thirds more energy per step. |
-| A meal's value depends on what the prey stored | A viewer | **Queued** | Not run yet |
+| A meal's value depends on what the prey stored | A viewer | **Running:** [Stage 5b](docs/specs/2026-10-30-fatprey-design.md), with its bar on record | No result yet |
 | Omnivores | Tom, in a reply to a viewer's comment | **Idea,** not started | Not run yet |
 
 ## What the statuses mean

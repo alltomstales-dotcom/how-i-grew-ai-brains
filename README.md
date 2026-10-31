@@ -51,11 +51,18 @@ to make the same living, not a better one.
 
 **Tasting.** One plant feeds and the other poisons. Nothing shows which, and they swap at random. Brains with memory
 took 85% and 76% good bites soon after a swap, against 64% with no memory, and wiping the memory took them back down to
-66% and 60%. **Memory is mostly speed:** brains with none also recover, later. And this is memory inside a trained
-network, not changing weights: what an animal "learns" lives in its memory state, and the ability to do that was
-learned by the species.
+66% and 60%. This is memory inside a trained network, not changing weights: what an animal "learns" lives in its memory
+state, and the ability to do that was learned by the species.
 
-**So far, [6 stages pass and 8 fail](docs/results.md).** The failures have often taught more than the passes.
+**Checking our own conclusion.** Brains with no memory seemed to recover later, so memory looked like mostly a gift of
+speed. Why would they recover at all? One guess was that the population remembers by where it lives. Scattering the
+grazers barely hurt them, so that test failed. Most of the "recovery" was survivorship: unlucky worlds died out, and the
+averages came from the lucky ones.
+
+**Next, a second viewer's idea.** A meal now gives a hunter energy according to what the prey stored, and hunters can see
+who is fat. It's [training now](docs/specs/2026-10-30-fatprey-design.md), and its bar is already public.
+
+**So far, [6 stages pass and 9 fail](docs/results.md).** The failures have often taught more than the passes.
 
 ## Watch it
 
@@ -86,8 +93,8 @@ The series is on [NeatScienceStuff](https://www.youtube.com/@NeatScienceStuff), 
 
 ## Build this with us
 
-This project grows with the people watching it. The ambush stage came from a viewer's comment on Part 1, and more ideas
-are queued. [SUGGESTIONS.md](SUGGESTIONS.md) shows each idea, who suggested it, its status and its result.
+This project grows with the people watching it. The ambush stage came from a viewer's comment on Part 1, and another
+viewer's idea is training now. [SUGGESTIONS.md](SUGGESTIONS.md) shows each idea, who suggested it, its status and its result.
 
 **[Suggest an experiment](https://github.com/alltomstales-dotcom/how-i-grew-ai-brains/issues/new?template=suggest-an-experiment.yml)**,
 no code needed, or read [CONTRIBUTING.md](CONTRIBUTING.md).

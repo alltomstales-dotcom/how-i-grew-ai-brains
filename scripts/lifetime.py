@@ -43,7 +43,9 @@ EDGES = (0, 10, 40)  # bins of steps since a flip: 0-10, 10-40, 40+
 BEAT_TARGET, RECOVER_TARGET = 0.10, 0.05
 
 
-def bite_shares(world, cfg, prey_policy, pred_policy, key, episodes: int, pool=None) -> dict:
+def bite_shares(world, cfg, prey_policy, pred_policy, key, episodes: int, pool=None, only_flips=False) -> dict:
+    """Good-bite share by steps since the last flip. The clock also starts at the start of each round, when the good
+    kind is drawn fresh. only_flips counts only bites after a real flip."""
     edges = jnp.asarray(EDGES)
 
     @jax.jit
@@ -62,8 +64,10 @@ def bite_shares(world, cfg, prey_policy, pred_policy, key, episodes: int, pool=N
             prey_a, pred_a, mem = pair_act(prey_policy, pred_policy, kp, kq, prey_obs, pred_obs, state, mem)
             res = jax.vmap(partial(world.advance, cfg))(jax.random.split(kw, episodes), state, prey_a, pred_a)
             bin_ = jnp.searchsorted(edges, state.since_flip, side="right") - 1
-            acc = acc.at[bin_, 0].add(res.info.good_bites.astype(jnp.float32))
-            acc = acc.at[bin_, 1].add(res.info.bad_bites.astype(jnp.float32))
+            real = (state.t - state.since_flip) > 0  # the clock restarted at a flip, not at the start of the round
+            where_ = real if only_flips else jnp.ones_like(real)
+            acc = acc.at[bin_, 0].add((res.info.good_bites * where_).astype(jnp.float32))
+            acc = acc.at[bin_, 1].add((res.info.bad_bites * where_).astype(jnp.float32))
             return (res.state, acc, forget_after(mem, res)), None
 
         init = (state, jnp.zeros((len(EDGES), 2), jnp.float32), pair_memory(prey_policy, pred_policy, state))
@@ -141,6 +145,110 @@ def measure(run_dir: Path, episodes: int, evolved: bool) -> dict:
             "eval": evaluate(wcfg, prey_pi, pred_pi, key, episodes, world, pool=pool)}
 
 
+class no_energy_sense:
+    """A policy that cannot feel its own energy (channel 4), the one thing a memoryless brain could use as a memory."""
+
+    def __init__(self, policy):
+        self.policy, self.memory = policy, getattr(policy, "memory", 0)
+
+    def __call__(self, key, obs):
+        return self.policy(key, obs.at[..., 4].set(0))
+
+    def step(self, key, obs, h):
+        return self.policy.step(key, obs.at[..., 4].set(0), h)
+
+
+def recovery_sources(world, cfg, prey_policy, pred_policy, key, episodes: int, pool=None) -> dict:
+    """By bin of steps since a flip: good-bite share among prey born before the flip and born after it, how often a prey
+    takes a good bite if it just stands on what is near it (the share of edible plants that are the good kind), and the
+    good share among low-energy and high-energy prey."""
+    edges = jnp.asarray(EDGES)
+
+    @jax.jit
+    def run(key):
+        k_reset, k_steps = jax.random.split(key)
+        keys = jax.random.split(k_reset, episodes)
+        if pool is None:
+            state = jax.vmap(partial(world.reset, cfg))(keys)
+        else:
+            state = jax.vmap(partial(world.reset, cfg), in_axes=(0, None))(keys, pool)
+        n = state.prey.alive.shape[1]
+
+        def body(carry, k):
+            state, acc, born_t, mem = carry
+            kp, kq, kw = jax.random.split(k, 3)
+            prey_obs, pred_obs = jax.vmap(partial(world.observe, cfg))(state)
+            prey_a, pred_a, mem = pair_act(prey_policy, pred_policy, kp, kq, prey_obs, pred_obs, state, mem)
+            res = jax.vmap(partial(world.advance, cfg))(jax.random.split(kw, episodes), state, prey_a, pred_a)
+            a, b = state.prey, res.state.prey
+            same = a.alive & b.alive & (a.gen == b.gen)
+            delta = b.energy - a.energy
+            good, bad = same & (delta > 1.0), same & (delta < -cfg.poison)
+            bin_ = jnp.searchsorted(edges, state.since_flip, side="right") - 1
+            binned = jnp.broadcast_to(bin_[:, None], a.alive.shape)
+            old = born_t <= (state.t - state.since_flip)[:, None]  # alive since before the last flip
+            fat = a.energy >= 20.0
+            def add(acc, row, mask_good, mask_bad):
+                acc = acc.at[row, binned.reshape(-1), 0].add(mask_good.reshape(-1).astype(jnp.float32))
+                return acc.at[row, binned.reshape(-1), 1].add(mask_bad.reshape(-1).astype(jnp.float32))
+            acc = add(acc, 0, good & old, bad & old)
+            acc = add(acc, 1, good & ~old, bad & ~old)
+            acc = add(acc, 2, good & ~fat, bad & ~fat)
+            acc = add(acc, 3, good & fat, bad & fat)
+            edible = state.plant & ~state.bitten
+            kind = (state.plant_genes[..., 1] >= 0.5).astype(jnp.int32)
+            good_kind = kind == state.good[:, None, None]
+            acc = acc.at[4, bin_, 0].add((edible & good_kind).sum((1, 2)).astype(jnp.float32))
+            acc = acc.at[4, bin_, 1].add((edible & ~good_kind).sum((1, 2)).astype(jnp.float32))
+            # What is within two cells of each living grazer: does the population sit among the good kind?
+            from simulations.predprey import _windows
+            def near(st, g, e):
+                w = _windows(jnp.stack([e & g, e & ~g], -1).astype(jnp.float32), st.prey.pos, 5, cfg.size)
+                return (w.sum((1, 2)) * st.prey.alive[:, None]).sum(0)
+            counts = jax.vmap(near)(state, good_kind, edible)  # (E, 2)
+            acc = acc.at[5, bin_, 0].add(counts[:, 0])
+            acc = acc.at[5, bin_, 1].add(counts[:, 1])
+            born_t = jnp.where(same, born_t, state.t[:, None] + 1)
+            return (res.state, acc, born_t, forget_after(mem, res)), None
+
+        init = (state, jnp.zeros((6, len(EDGES), 2), jnp.float32), jnp.zeros((episodes, n), jnp.int32),
+                pair_memory(prey_policy, pred_policy, state))
+        (_, acc, _, _), _ = jax.lax.scan(body, init, jax.random.split(k_steps, cfg.max_steps))
+        return acc
+
+    acc = np.asarray(run(key))
+    rows = ("born_before_flip", "born_after_flip", "low_energy", "high_energy", "edible_plants", "edible_near_grazers")
+    bins = ("0-10", "10-40", "40+")
+    return {r: {b: {"share": float(acc[i, j, 0] / max(acc[i, j].sum(), 1.0)), "n": float(acc[i, j].sum())}
+                for j, b in enumerate(bins)} for i, r in enumerate(rows)}
+
+
+def why(run_dir: Path, episodes: int, evolved: bool) -> dict:
+    config = json.loads((run_dir / "config.json").read_text())
+    world, wcfg = load_world_config(config)
+    net = make_net(world, wcfg, config["train"].get("memory", 0))
+    template = init_params(net, jax.random.PRNGKey(0), wcfg.view, obs_channels(world, wcfg))
+    prey_params, pred_params, _ = load_brains(run_dir / "checkpoints" / "latest.msgpack", template)
+    prey_pi, pred_pi = network_policy(net, prey_params), network_policy(net, pred_params)
+    pool = None
+    if evolved:
+        from scripts.league import evolved_pool
+        pool, _ = evolved_pool(run_dir)
+    key = jax.random.PRNGKey(EVAL_SEED)
+    out = {"sources": recovery_sources(world, wcfg, prey_pi, pred_pi, key, episodes, pool),
+           "as_trained": bite_shares(world, wcfg, prey_pi, pred_pi, key, episodes, pool),
+           "no_energy_sense": bite_shares(world, wcfg, no_energy_sense(prey_pi), pred_pi, key, episodes, pool),
+           "real_flips_only": bite_shares(world, wcfg, prey_pi, pred_pi, key, episodes, pool, only_flips=True)}
+    (run_dir / "lifetime_why.json").write_text(json.dumps(out, indent=1))
+    show = lambda d: " ".join(f"{k} {v['share']:.3f}" for k, v in d.items())
+    for name, row in out["sources"].items():
+        print(f"{name:18s} {show(row)}")
+    print(f"as trained         {show(out['as_trained'])}")
+    print(f"no energy sense    {show(out['no_energy_sense'])}")
+    print(f"real flips only    {show(out['real_flips_only'])}  bites {[int(v['good'] + v['bad']) for v in out['real_flips_only'].values()]}")
+    return out
+
+
 def controls(run_dir: Path, baseline: Path, episodes: int, evolved: bool) -> dict:
     """Not part of the pass bars: is it the memory, and does the same animal change after a bad bite?"""
     out = {}
@@ -175,9 +283,13 @@ def main(argv=None) -> int:
     p.add_argument("--baseline", default=None, help="a feed-forward run of the same world")
     p.add_argument("--episodes", type=int, default=256)
     p.add_argument("--evolved", action="store_true", help="start from each run's latest evolved bodies")
+    p.add_argument("--why", action="store_true", help="what drives recovery after a flip (lifetime_why.json)")
     p.add_argument("--controls", action="store_true", help="memory wiped, and next bite after a bad bite (lifetime_controls.json)")
     args = p.parse_args(argv)
     run_dir = Path(args.run_dir)
+    if args.why:
+        why(run_dir, args.episodes, args.evolved)
+        return 0
     if args.controls:
         controls(run_dir, Path(args.baseline), args.episodes, args.evolved)
         return 0

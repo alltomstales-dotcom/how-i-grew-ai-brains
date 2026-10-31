@@ -11,12 +11,14 @@ replaced with neutral wording; the engineering and the results are unchanged.
 | [Terrain](2026-10-14-terrain-design.md) | 3: walls and burrows | FAIL (burrow use did not emerge) |
 | [Memory](2026-10-14-memory-design.md) | 4: seasons and recurrent brains | FAIL |
 | [Speciation](2026-10-14-speciation-design.md) | 5a: size, mating, two foods | FAIL, six versions |
+| [Stored meals](2026-10-30-fatprey-design.md) | 5b: a viewer's idea, a meal worth what the prey stored | Training; no result yet |
 | [Pack hunting](2026-10-14-pack-hunting-design.md) | 6a: two hunters per catch | FAIL |
 | [Signals](2026-10-14-signals-design.md) | 6b: a signal action | FAIL |
 | [Flanking](2026-10-14-flanking-design.md) | 6c: hunters must surround prey | PASS on two seeds |
 | [Brain size](2026-10-14-brain-size-design.md) | 7a: brain size as a gene, flat cost | FAIL, three tries |
 | [Brain tax](2026-10-29-brain-tax-design.md) | 7b: the brain as a share of each meal | PASS on two seeds |
-| [Lifetime](2026-10-30-lifetime-design.md) | 7c: food that poisons, memory within a life | PASS on two seeds; mostly a gift of speed |
+| [Lifetime](2026-10-30-lifetime-design.md) | 7c: food that poisons, memory within a life | PASS on two seeds; 7d changes how the no-memory curve reads |
+| [Scatter](2026-10-30-scatter-design.md) | 7d: is the map the memory? | FAIL; most no-memory "recovery" was survivorship |
 | [Hills](2026-10-29-hills-design.md) | 8a: a height map | FAIL |
 | [Ambush](2026-10-30-ambush-design.md) | 8b: a viewer's idea, thickets and walking costs | PASS on two seeds; only matches chasing per meal |
 

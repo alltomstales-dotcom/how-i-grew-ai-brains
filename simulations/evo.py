@@ -90,6 +90,9 @@ class EvoConfig(WorldConfig):
     fickle: bool = False  # one plant kind feeds and the other poisons; which is hidden and flips at random (Stage 7c)
     flip_rate: float = 1 / 150  # chance per step that the good kind flips
     poison: float = 3.0  # energy lost for a bite of the bad kind
+    fat_sense: bool = False  # animals can see how much energy visible prey hold (Stage 5b)
+    stored_meals: bool = False  # a catch is worth what the prey stored, times meal_share, not a fixed catch_energy (Stage 5b)
+    meal_share: float = 1.25  # with prey at about 20 energy, about the usual catch_energy of 25
     brain_tax: float = 0.0  # an animal with brain gene g keeps 1 - brain_tax * g of every meal, so rich and poor pay the same share (Stage 7b)
 
 
@@ -181,6 +184,19 @@ class FickleConfig(EvoConfig):
     plant_kinds: bool = True
     kinds_persist: bool = True
     plant_sigma: float = 0.0
+
+
+@dataclass(frozen=True)
+class FatPreyConfig(EvoConfig):
+    """Stage 5b, from a viewer's comment: a predator's meal is worth what the grazer stored, and hunters can see who is fat."""
+    fat_sense: bool = True
+    stored_meals: bool = True
+
+
+@dataclass(frozen=True)
+class FatPreyFixedConfig(EvoConfig):
+    """Stage 5b's control: hunters can see who is fat, but every meal is worth the same, so it should not matter."""
+    fat_sense: bool = True
 
 
 @dataclass(frozen=True)
@@ -497,6 +513,8 @@ def observe(cfg: EvoConfig, state: State) -> tuple[jax.Array, jax.Array]:
     cheb = jnp.maximum(jnp.abs(offs)[:, None], jnp.abs(offs)[None, :])  # (view, view)
     hmap = jnp.asarray(height_map(cfg)) if cfg.hills else None
     cover = jnp.asarray(thicket_map(cfg))[..., None].astype(jnp.float32) if cfg.thickets > 0 else None
+    fat = (jnp.zeros((cfg.size, cfg.size), jnp.float32).at[state.prey.pos[:, 1], state.prey.pos[:, 0]]
+           .add(state.prey.energy * state.prey.alive / cfg.prey_energy_cap))[..., None] if cfg.fat_sense else None
 
     def one(sp: Species, cap: float, kind: str) -> jax.Array:
         w = pp._windows(maps, sp.pos, cfg.view, cfg.size)
@@ -529,6 +547,8 @@ def observe(cfg: EvoConfig, state: State) -> tuple[jax.Array, jax.Array]:
             parts.append(jnp.where(seen, heights - h_self[:, None, None], 0.0)[..., None])
         if cfg.thickets > 0:  # where the thickets are, within sight
             parts.append(jnp.where(seen, in_cover, False).astype(jnp.float32)[..., None])
+        if cfg.fat_sense:  # how much energy the prey in each visible cell hold
+            parts.append(jnp.where(seen[..., None], pp._windows(fat, sp.pos, cfg.view, cfg.size), 0.0))
         if cfg.brains:  # last, so the network can read it to size the brain
             parts.append(jnp.broadcast_to(sp.genes[:, None, None, 4:5], w.shape[:-1] + (1,)))
         obs = jnp.concatenate(parts, axis=-1)
@@ -538,7 +558,7 @@ def observe(cfg: EvoConfig, state: State) -> tuple[jax.Array, jax.Array]:
 
 
 def obs_channels(cfg: EvoConfig) -> int:
-    return OBS_CHANNELS + int(cfg.signals) + int(cfg.hills) + int(cfg.thickets > 0) + int(cfg.brains)
+    return OBS_CHANNELS + int(cfg.signals) + int(cfg.hills) + int(cfg.thickets > 0) + int(cfg.fat_sense) + int(cfg.brains)
 
 
 def num_actions(cfg: EvoConfig) -> int:
@@ -576,6 +596,8 @@ class StepInfo(NamedTuple):
     prey_far_burrow: jax.Array
     good_bites: jax.Array  # fickle worlds: bites of the kind that feeds, and of the kind that poisons
     bad_bites: jax.Array
+    eaten_energy: jax.Array  # energy held by the prey eaten this step
+    eaten_baseline: jax.Array  # the same if each had held the living prey's mean energy
 
 
 THREAT = 3  # Chebyshev cells (wrapped) at which a predator counts as close
@@ -641,6 +663,9 @@ def _predation(cfg: EvoConfig, key, prey: Species, pred: Species) -> tuple[jax.A
         return _pack_predation(cfg, prey, pred)
     if not (cfg.sizes and cfg.size_catch):
         caught, eaten = pp.predation(prey, pred)
+        if cfg.stored_meals:  # the same choice pp.predation made: the lowest-index prey on the predator's cell
+            same = jnp.all(pred.pos[:, None, :] == prey.pos[None, :, :], axis=-1) & pred.alive[:, None] & prey.alive[None, :]
+            return caught, eaten, cfg.meal_share * prey.energy[jnp.argmax(same, axis=1)] * caught
         return caught, eaten, cfg.catch_energy * caught
     same = (
         jnp.all(pred.pos[:, None, :] == prey.pos[None, :, :], axis=-1)
@@ -817,6 +842,9 @@ def advance(cfg: EvoConfig, key: jax.Array, state: State, prey_act, pred_act) ->
     # 2. Predation.
     caught, eaten, meal = _predation(cfg, jax.random.fold_in(k_pred, 7), prey, pred)
     pred = pred._replace(energy=pred.energy + meal * _kept(cfg, pred))
+    eaten_energy = (prey.energy * eaten).sum()  # how fat the eaten were, against how fat the living were
+    living = (prey.energy * prey.alive).sum() / jnp.maximum(prey.alive.sum(), 1)
+    eaten_baseline = eaten.sum() * living
     prey = prey._replace(alive=prey.alive & ~eaten)
 
     # 3. Grazing.
@@ -885,7 +913,7 @@ def advance(cfg: EvoConfig, key: jax.Array, state: State, prey_act, pred_act) ->
         plant_count=plant.sum().astype(jnp.int32),
         plant_cover=plant.mean(),
         prey_near=near, prey_near_burrow=near_hidden, prey_far=far, prey_far_burrow=far_hidden,
-        good_bites=good_bites, bad_bites=bad_bites,
+        good_bites=good_bites, bad_bites=bad_bites, eaten_energy=eaten_energy, eaten_baseline=eaten_baseline,
     )
     return pp.StepResult(
         # A slot that died this step is silent, even if a newborn took it.
@@ -943,6 +971,7 @@ def extra_metrics(info: StepInfo) -> dict:
     out["burrow_use_near"] = info.prey_near_burrow.sum() / jnp.maximum(info.prey_near.sum(), 1)
     out["burrow_use_far"] = info.prey_far_burrow.sum() / jnp.maximum(info.prey_far.sum(), 1)
     out["good_bite_share"] = info.good_bites.sum() / jnp.maximum((info.good_bites + info.bad_bites).sum(), 1)
+    out["fat_selectivity"] = info.eaten_energy.sum() / jnp.maximum(info.eaten_baseline.sum(), 1e-6)
     return out
 
 

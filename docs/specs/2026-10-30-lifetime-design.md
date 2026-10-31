@@ -70,3 +70,20 @@ Limits:
 - **Seed 1 is weaker,** and it shows no gain in prey lifetime (35.7 against 36.0).
 - This is memory inside a trained network, with weights fixed during life. The ability to taste and remember was learned by the species across training.
   Plastic weights remain for later.
+
+## Why do brains with no memory recover? (2026-10-30, `scripts.lifetime --why`)
+
+The bins above count steps since the clock last restarted, which is a flip or the start of a round (when the good kind is drawn fresh). Counting bites after real flips only, memory's lead is larger: at 10-40 steps memory 0.888 / 0.788 against no memory 0.576 / 0.607.
+
+Share of the good kind among edible plants, seeds 0 / 1:
+
+| | whole map, 40+ | within 2 cells of grazers, 0-10 | 10-40 | 40+ | good-bite share, 40+ |
+|---|---|---|---|---|---|
+| no memory | 0.495 / 0.492 | 0.455 / 0.465 | 0.628 / 0.618 | 0.806 / 0.775 | 0.750 / 0.746 |
+| memory | 0.336 / 0.396 | 0.567 / 0.532 | 0.501 / 0.525 | 0.374 / 0.462 | 0.827 / 0.737 |
+
+- **No memory:** the map stays at half and half, yet what surrounds the grazers climbs to about 0.8, and their bites simply match it. The population ends up sitting on the good kind. Grazers born after a flip already do better than those born before it (0.68 against 0.46 at 0-10).
+- **Memory:** the good kind around them gets scarcer (they eat it down), yet they still take it about 0.8 of the time, roughly twice what is nearby. That is choice.
+- Removing the sense of their own energy costs no-memory brains 0.05-0.07 at 10-40, so energy acts as a small memory too. Low and high-energy grazers do not differ.
+
+Hypothesis: without memory, the map is the memory. This is a correlation until Stage 7d (below in the roadmap) tests it by scattering the grazers.

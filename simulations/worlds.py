@@ -26,6 +26,8 @@ WORLDS = {
     "flank_hills": (evo, evo.FlankHillsConfig),
     "ambush": (evo, evo.AmbushConfig),
     "fickle": (evo, evo.FickleConfig),
+    "fatprey": (evo, evo.FatPreyConfig),
+    "fatprey_fixed": (evo, evo.FatPreyFixedConfig),
 }
 
 
