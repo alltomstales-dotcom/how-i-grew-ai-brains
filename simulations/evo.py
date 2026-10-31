@@ -56,6 +56,8 @@ class EvoConfig(WorldConfig):
     day_len: int = 0  # steps per day (0 = always day); at night every animal sees only its neighbours
     night_frac: float = 0.3  # the last part of each day that is night
     season_len: int = 0  # steps per season (0 = none); the map's halves take turns being in season
+    winter_len: int = 0  # steps per half-year (0 = none); the whole map alternates summer and winter (Stage 9c)
+    winter_value: float = 0.25  # what a plant feeds in winter, against 1 in summer
     offseason_death: float = 3.0  # plants out of season die this many times faster and cannot seed
     sizes: bool = False  # the size gene matters: tough plants, burrows, catches and upkeep
     burrow_size: float = 0.5  # only animals smaller than this fit into a burrow
@@ -222,6 +224,19 @@ class OmniD08Config(OmniConfig):
 @dataclass(frozen=True)
 class OmniD20Config(OmniConfig):
     plant_digest: float = 0.2
+
+
+@dataclass(frozen=True)
+class OmniD14Config(OmniConfig):
+    """Stage 9c's control: the winter world's yearly average gut, all year."""
+    plant_digest: float = 0.14
+
+
+@dataclass(frozen=True)
+class OmniWinterConfig(OmniConfig):
+    """Stage 9c: plants are thin food half the time, so summer pays above the diet switch and winter below it."""
+    plant_digest: float = 0.224
+    winter_len: int = 60
 
 
 @dataclass(frozen=True)
@@ -692,6 +707,13 @@ def _meat_share(cfg: EvoConfig, pred: Species):
     return 0.5 if cfg.diet_fixed else pred.genes[:, 5]
 
 
+def _plant_value(cfg: EvoConfig, t):
+    """What a plant feeds at step t: 1, or winter_value in winter (Stage 9c)."""
+    if not cfg.winter_len:
+        return 1.0
+    return jnp.where((t // cfg.winter_len) % 2 == 0, 1.0, cfg.winter_value)
+
+
 def _metabolise(cfg: EvoConfig, sp: Species, cap: float, base: float = 1.0) -> Species:
     radius = sight_radius(sp.genes[:, 1])
     cost = base + cfg.speed_cost * sp.genes[:, 0] ** 2 + cfg.sight_cost * (radius - 1) / 3
@@ -904,14 +926,15 @@ def advance(cfg: EvoConfig, key: jax.Array, state: State, prey_act, pred_act) ->
     prey = prey._replace(alive=prey.alive & ~eaten)
 
     # 3. Grazing.
+    plant_value = _plant_value(cfg, state.t)
     prey, plant, bitten, good_bites, bad_bites = _graze(cfg, k_graze, prey, state.plant, state.plant_genes,
-                                                        state.bitten, state.good)
+                                                        state.bitten, state.good, plant_value)
 
     pred_bites, pred_plant_gain = jnp.int32(0), jnp.float32(0.0)
     if cfg.omnivore:  # hunters take what the grazers left this step
         before = pred.energy
         pred, plant, bitten, g, b = _graze(cfg, jax.random.fold_in(k_graze, 1), pred, plant, state.plant_genes, bitten, state.good,
-                                           (1.0 - _meat_share(cfg, pred)) * cfg.plant_digest)
+                                           (1.0 - _meat_share(cfg, pred)) * cfg.plant_digest * plant_value)
         pred_bites, pred_plant_gain = g + b, (pred.energy - before).sum()
 
     # 4. Metabolism (with trait and signal costs) and caps.

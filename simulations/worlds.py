@@ -32,6 +32,8 @@ WORLDS = {
     "omni_d03": (evo, evo.OmniD03Config),
     "omni_d08": (evo, evo.OmniD08Config),
     "omni_d20": (evo, evo.OmniD20Config),
+    "omni_d14": (evo, evo.OmniD14Config),
+    "omni_winter": (evo, evo.OmniWinterConfig),
     "fatprey": (evo, evo.FatPreyConfig),
     "fatprey_rich": (evo, evo.FatPreyRichConfig),
     "fatprey_fixed": (evo, evo.FatPreyFixedConfig),

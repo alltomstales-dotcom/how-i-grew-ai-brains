@@ -1,5 +1,6 @@
 """Stage 9a test: do hunters leave meat when they can eat plants? python -m scripts.omnivore --omni runs/A --tough runs/B --neutral runs/C [--evolved]
 Stage 9b test: which gut keeps them hunting? python -m scripts.omnivore --ladder runs/D03 runs/D08 runs/D20 [--evolved]
+Stage 9c test: do winters make real omnivores? python -m scripts.omnivore --winter runs/W --control runs/C [--evolved]
 
 Measures the diet gene of living hunters and where their energy comes from, in each world. Bars are in the spec.
 Writes omnivore.json in the --omni run directory.
@@ -21,6 +22,7 @@ from scripts.meals import load
 
 LEAVE_TARGET, GUT_TARGET = 0.15, 0.10
 HUNTER_TARGET, PLANT_TARGET = 0.50, 0.25  # stage 9b: diet at the worst gut, at the best
+MIX_DIET, MIX_PLANTS, MIX_SD = (0.30, 0.70), (0.20, 0.80), 0.20  # stage 9c: what counts as one mixed diet
 
 
 def feeding(world, cfg, prey_pi, pred_pi, key, episodes: int, pool=None) -> dict:
@@ -69,17 +71,36 @@ def verdict(omni: dict, tough: dict, neutral: dict) -> dict:
     return out
 
 
+def winter_verdict(winter: dict, control: dict) -> dict:
+    inside = lambda v, band: band[0] <= v <= band[1]
+    out = {"mixed_pass": inside(winter["diet"], MIX_DIET) and inside(winter["plant_share"], MIX_PLANTS),
+           "one_camp_pass": winter["diet_sd"] <= MIX_SD, "control_pass": not inside(control["diet"], MIX_DIET)}
+    out["pass"] = out["mixed_pass"] and out["one_camp_pass"] and out["control_pass"]
+    return out
+
+
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--omni")
     p.add_argument("--tough")
     p.add_argument("--neutral")
     p.add_argument("--ladder", nargs="+", help="run directories, worst gut first; writes ladder.json in the first")
+    p.add_argument("--winter")
+    p.add_argument("--control")
     p.add_argument("--episodes", type=int, default=256)
     p.add_argument("--evolved", action="store_true")
     args = p.parse_args(argv)
     key = jax.random.PRNGKey(EVAL_SEED)
     res = {}
+    if args.winter:
+        for name, path in (("winter", args.winter), ("control", args.control)):
+            world, cfg, prey_pi, pred_pi, pool = load(Path(path), args.evolved)
+            res[name] = feeding(world, cfg, prey_pi, pred_pi, key, args.episodes, pool)
+            print(f"{name:8s} {line(res[name])}")
+        out = {**res, **winter_verdict(res["winter"], res["control"])}
+        (Path(args.winter) / "winter.json").write_text(json.dumps(out, indent=1))
+        print(f"mixed diet {out['mixed_pass']}, one camp {out['one_camp_pass']}, control not mixed {out['control_pass']}: {'PASS' if out['pass'] else 'FAIL'}")
+        return 0
     if args.ladder:
         for path in args.ladder:
             world, cfg, prey_pi, pred_pi, pool = load(Path(path), args.evolved)

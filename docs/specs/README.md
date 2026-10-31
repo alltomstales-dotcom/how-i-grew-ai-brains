@@ -22,7 +22,8 @@ replaced with neutral wording; the engineering and the results are unchanged.
 | [Hills](2026-10-29-hills-design.md) | 8a: a height map | FAIL |
 | [Ambush](2026-10-30-ambush-design.md) | 8b: a viewer's idea, thickets and walking costs | PASS on two seeds; only matches chasing per meal |
 | [Omnivores](2026-10-30-omnivore-design.md) | 9a: hunters with a diet gene | FAIL on the second bar; hunters stopped hunting, and a poor gut went further |
-| [Gut ladder](2026-10-31-gut-ladder-design.md) | 9b: how bad must a gut be to keep a hunter hunting? | Training; no result yet |
+| [Gut ladder](2026-10-31-gut-ladder-design.md) | 9b: how bad must a gut be to keep a hunter hunting? | PASS on two seeds; a sharp switch, and few hunters |
+| [Winter](2026-10-31-winter-design.md) | 9c: do winters make real omnivores? | Training; no result yet |
 
 The league and predator-stall work of Stage 3b is written up in the [roadmap](../roadmap.md).
 A summary of all of it is in [results.md](../results.md).

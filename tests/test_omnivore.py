@@ -46,6 +46,26 @@ def test_grazers_eat_first_and_hunters_elsewhere_are_unchanged():
     assert np.isclose(float(r.info.pred_meat_gain), plain.catch_energy) and int(r.info.pred_bites) == 0
 
 
+def test_winter_thins_plants_for_grazers_and_hunters():
+    w = replace(CFG, winter_len=10, winter_value=0.25)
+    prey = [(3, 3, 20.0, 0.0, 0.5, 0.5)]
+    plant = [(3, 3, 0.5, 0.0)]
+    for t, value in ((0, 1.0), (9, 1.0), (10, 0.25), (19, 0.25), (20, 1.0)):
+        hunter = evo.make_state(w, pred=[(3, 3, 30.0, 0.0, 0.5, 0.5, 0.5, 0.5, 0.0)], plants=plant, t=t)
+        assert np.isclose(float(evo.advance(w, KEY, hunter, STILL, STILL).info.pred_plant_gain), value * w.grass_energy)
+        grazer = evo.make_state(w, prey=prey, plants=plant, t=t)
+        assert np.isclose(float(evo.advance(w, KEY, grazer, STILL, STILL).state.prey.energy[0]), 20.0 + value * w.grass_energy - 1.0, atol=1.5)
+
+
+def test_winter_verdict_needs_one_mixed_diet_and_a_control_that_is_not():
+    import scripts.omnivore as o
+    mixed, plain = {"diet": 0.5, "plant_share": 0.5, "diet_sd": 0.1}, {"diet": 0.9}
+    assert o.winter_verdict(mixed, plain)["pass"]
+    assert not o.winter_verdict({**mixed, "diet_sd": 0.3}, plain)["pass"]  # two camps
+    assert not o.winter_verdict({**mixed, "plant_share": 0.95}, plain)["pass"]
+    assert not o.winter_verdict(mixed, {"diet": 0.5})["pass"]  # mixed without winter too
+
+
 def test_hunters_see_their_own_diet():
     s = evo.make_state(CFG, pred=[(3, 3, 30.0, 0.0, 0.5, 0.5, 0.5, 0.5, 0.25)])
     _, pred_obs = evo.observe(CFG, s)
@@ -64,3 +84,6 @@ def test_the_script_runs_on_tiny_runs(tmp_path):
     assert train.main([*common, "--world", "omni_d03", "--run-id", "d"]) == 0
     assert omnivore.main(["--ladder", str(tmp_path / "d"), str(tmp_path / "a"), "--episodes", "2"]) == 0
     assert isinstance(json.loads((tmp_path / "d" / "ladder.json").read_text())["pass"], bool)
+    assert train.main([*common, "--world", "omni_winter", "--run-id", "w"]) == 0
+    assert omnivore.main(["--winter", str(tmp_path / "w"), "--control", str(tmp_path / "d"), "--episodes", "2"]) == 0
+    assert isinstance(json.loads((tmp_path / "w" / "winter.json").read_text())["pass"], bool)

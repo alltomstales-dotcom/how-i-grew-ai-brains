@@ -104,7 +104,8 @@
    "coming": [
     "5b, a viewer's idea: meals worth what the prey stored, hunters who can see fat (FAIL twice, closed: selectivity 1.10x and 0.97x, then 1.07x and 1.00x with meals back at about 25, against 1.15x; hunters did not choose fat)",
     "9a, hunters who can eat plants (FAIL on the second bar: diet fell to 0.10 and they stopped hunting; a poor gut went lower still, 0.05)",
-    "9b, how bad must a gut be to keep a hunter hunting? A ladder of 0.03, 0.08 and 0.20 (training)",
+    "9b, how bad must a gut be to keep a hunter hunting? PASS on two seeds: diet 0.90 at a gut of 0.03, 0.87 at 0.08, 0.07 at 0.20; a sharp switch, and few hunters",
+    "9c, do winters make real omnivores? Plants are thin food half the time (training)",
     "A food web: mid-predators and scavengers (Stage 5b)",
     "Maps of 128-256 cells, sharded across the GB10",
     "Armour and camouflage genes"

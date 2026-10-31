@@ -9,7 +9,7 @@ form, or in a comment on [any of the videos](https://www.youtube.com/@NeatScienc
 |---|---|---|---|
 | Hunters that hide, so they spend less energy chasing | [@rhetkuehne8613](https://www.youtube.com/@rhetkuehne8613), comment on Part 1 | **Tested:** [Stage 8b](docs/specs/2026-10-30-ambush-design.md) | **PASS on two seeds.** Hunters spend 64-65% of their time in thickets (25% of the map), and catch 68-72% less when thickets stop hiding them. But hiding only matches chasing per meal: a one-line chaser catches 1.4-1.7x as much and burns about two thirds more energy per step. |
 | A meal's value depends on what the prey stored | A viewer | **Tested:** [Stage 5b](docs/specs/2026-10-30-fatprey-design.md) | **FAIL, twice.** Hunters don't choose fat prey here, even in a fair retest. That is this world, not real predators |
-| Omnivores | Tom, in a reply to a viewer's comment | **Tested:** [Stage 9a](docs/specs/2026-10-30-omnivore-design.md), and [9b](docs/specs/2026-10-31-gut-ladder-design.md) is running | **FAIL on one of two bars.** Given plants, hunters stopped hunting almost entirely |
+| Omnivores | Tom, in a reply to a viewer's comment | **Tested:** [Stage 9a](docs/specs/2026-10-30-omnivore-design.md) and [9b](docs/specs/2026-10-31-gut-ladder-design.md); [9c](docs/specs/2026-10-31-winter-design.md) is running | **9a FAIL on one of two bars, 9b PASS.** Given plants, hunters stopped hunting almost entirely, unless their gut was very poor at plants |
 
 ## What the statuses mean
 

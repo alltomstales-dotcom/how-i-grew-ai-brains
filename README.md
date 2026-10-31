@@ -64,10 +64,12 @@ who was fat. They [didn't choose fat prey](docs/specs/2026-10-30-fatprey-design.
 
 **Then hunters got to eat plants.** They [stopped hunting](docs/specs/2026-10-30-omnivore-design.md). A simple chase rule now
 catches ten times what they do, and a poor gut for plants only pushed them further that way, against my prediction. The
-[next test](docs/specs/2026-10-31-gut-ladder-design.md) asks how bad a gut must be to keep a hunter hunting, and its bar is
-already public.
+[next test](docs/specs/2026-10-31-gut-ladder-design.md) found the answer: at a very poor gut they hunt well again, with a
+sharp switch and few hunters. Hunters end at nearly all meat or nearly all plants, so
+[winters](docs/specs/2026-10-31-winter-design.md) are training now to see if changing food makes a real mixed diet, and that
+bar is already public.
 
-**So far, [6 stages pass and 11 fail](docs/results.md).** The failures have often taught more than the passes.
+**So far, [7 stages pass and 11 fail](docs/results.md).** The failures have often taught more than the passes.
 
 ## Watch it
 
@@ -87,13 +89,15 @@ The series is on [NeatScienceStuff](https://www.youtube.com/@NeatScienceStuff), 
 | Part | Title | Watch |
 |---|---|---|
 | 1 | I gave two species blank AI brains. The hunters starved. | [Watch](https://youtu.be/Y4Up4N4FfQI) |
-| 2 | Evolution made my AI hunters nearly blind | coming Oct 30 |
+| 2 | Evolution made my AI hunters nearly blind | [Watch](https://youtu.be/xOQ9zQpWSkA) |
 | 3 | My AI hunters barely beat one line of code | coming Oct 31 |
 | 4 | My AI hunters only got smart when they had to surround their prey | coming Nov 1 |
 | 5 | I let evolution decide how big my AI's brain should be | coming Nov 2 |
 | 6 | I gave my AI hunters hills. They took the high ground. | coming Nov 3 |
 | 7 | A viewer said my AI hunters should hide. So I let them. | coming Nov 4 |
 | 8 | I gave my AI creatures poisoned food, and they learned to taste | coming Nov 5 |
+| 9 | My AI seemed to learn with no memory. Then I counted the dead worlds. | coming Nov 6 |
+| 10 | I let my AI hunters eat plants. They stopped hunting. | coming Nov 7 |
 <!-- videos:end -->
 
 ## Build this with us

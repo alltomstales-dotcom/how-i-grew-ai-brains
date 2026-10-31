@@ -25,6 +25,7 @@ failed world as its own attempt, there are 16 failures. Some passes are weaker t
 | 8a | Do hills matter? | 10% worse with the height channel zeroed | **FAIL:** predators 4.8% and -5.4%, prey 2%. Hunters do take the high ground (78% against 64% at random) in plain hills | [spec](specs/2026-10-29-hills-design.md) |
 | 8b | Do hunters learn to ambush, if walking costs energy and thickets hide them? (a viewer's idea) | 1.3x the map's thicket share, 1.5x random's stillness, 10% fewer catches when thickets stop hiding them, on two seeds | **PASS:** 64-65% in thickets (map 25%), 90-93% still (random 20%), 68-72% fewer catches. See the limits below | [spec](specs/2026-10-30-ambush-design.md) |
 | 9a | If hunters can eat plants, do they leave meat, and does a poor gut keep them hunting? | Diet 0.15 below a control where the gene does nothing, and 0.10 higher with a poor gut, on two seeds | **FAIL on the second:** diet fell to 0.10 (control 0.46) and they stopped hunting, but a poor gut went lower still, 0.05, as hunters fell from 32 to 5 | [spec](specs/2026-10-30-omnivore-design.md) |
+| 9b | How bad must a gut be to keep a hunter hunting? | Diet at least 0.50 at a gut of 0.03, and at most 0.25 at 0.20, on two seeds | **PASS:** 0.90 and 0.91, then 0.07. A sharp switch between 0.08 and 0.20, a little above our rough sum of 0.07, and only 2-3 hunters per world | [spec](specs/2026-10-31-gut-ladder-design.md) |
 
 ## Limits worth repeating
 
