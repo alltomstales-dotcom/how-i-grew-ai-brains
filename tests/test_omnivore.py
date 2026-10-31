@@ -87,3 +87,25 @@ def test_the_script_runs_on_tiny_runs(tmp_path):
     assert train.main([*common, "--world", "omni_winter", "--run-id", "w"]) == 0
     assert omnivore.main(["--winter", str(tmp_path / "w"), "--control", str(tmp_path / "d"), "--episodes", "2"]) == 0
     assert isinstance(json.loads((tmp_path / "w" / "winter.json").read_text())["pass"], bool)
+    assert omnivore.main(["--camps", str(tmp_path / "a"), "--episodes", "2"]) == 0
+    assert isinstance(json.loads((tmp_path / "a" / "camps.json").read_text())["pass"], bool)
+    assert omnivore.main(["--camp-curve", str(tmp_path / "a"), "--episodes", "2"]) == 0
+    assert json.loads((tmp_path / "a" / "camp_curve.json").read_text())[0]["step"] == 0
+
+
+def test_the_lean_world_starts_with_fewer_plants():
+    rich, lean = evo.OmniD11Config(), evo.OmniD11LeanConfig()
+    assert rich.plant_digest == lean.plant_digest == 0.11 and lean.init_grass_frac == 0.2 < rich.init_grass_frac
+    assert float(evo.reset(lean, KEY).plant.mean()) < float(evo.reset(rich, KEY).plant.mean())
+
+
+def test_diet_split_is_scored_on_hunters_only():
+    import scripts.species as species
+    rng = np.random.default_rng(0)
+    both = np.concatenate([rng.normal(0.05, 0.05, 300), rng.normal(0.9, 0.05, 300)])
+    genes = np.full((600, evo.ANIMAL_GENES), 0.5); genes[:, 5] = both
+    assert species.split_found(species.split(genes, "diet"), "diet")
+    drifted = {"separation": 2.6, "minority": 0.3, "size_gap": 0.48}
+    assert species.split_found(drifted) and not species.split_found(drifted, "diet")
+    one = np.full((600, evo.ANIMAL_GENES), 0.5); one[:, 5] = rng.normal(0.05, 0.05, 600)
+    assert not species.split_found(species.split(one, "diet"), "diet")

@@ -38,6 +38,11 @@
    "id": "pp-omni-0",
    "has_3d": true,
    "label": "Stage 9a: hunters who can eat plants, and mostly don't hunt"
+  },
+  {
+   "id": "pp-diet11-2",
+   "has_3d": true,
+   "label": "Stage 9d: plant eaters and meat eaters, taking turns"
   }
  ],
  "moments": [

@@ -227,6 +227,18 @@ class OmniD20Config(OmniConfig):
 
 
 @dataclass(frozen=True)
+class OmniD11Config(OmniConfig):
+    """Stage 9d: between the guts where hunters stay on meat (0.08) and mostly leave it (0.14)."""
+    plant_digest: float = 0.11
+
+
+@dataclass(frozen=True)
+class OmniD11LeanConfig(OmniD11Config):
+    """Stage 9e: the same gut, without the rich field of plants at the start."""
+    init_grass_frac: float = 0.2
+
+
+@dataclass(frozen=True)
 class OmniD14Config(OmniConfig):
     """Stage 9c's control: the winter world's yearly average gut, all year."""
     plant_digest: float = 0.14

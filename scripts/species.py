@@ -24,6 +24,7 @@ from simulations.evo import ANIMAL_GENES, GENE_NAMES, pad_genes
 SEPARATION_TARGET = 2.0
 MINORITY_TARGET = 0.2
 GAP_TARGET = 0.3  # above catch_margin (0.25): a no-learning probe reached 0.24 by chance (see spec)
+DIET_SEPARATION, DIET_GAP = 4.0, 0.6  # stage 9d: drift alone reached D 2.66 and gap 0.49 on the diet gene (see spec)
 SD_FLOOR = 0.05  # EvoConfig.gene_sigma: one mutation step
 MIN_ANIMALS = 20
 LAST = 3
@@ -59,10 +60,10 @@ def mixture_1d(z: np.ndarray, labels: np.ndarray, floor: float = SD_FLOOR, iters
     return m, s, w
 
 
-def split(genes: np.ndarray) -> dict:
+def split(genes: np.ndarray, gene: str = "size") -> dict:
     x = np.asarray(genes, np.float64)
     c, _ = two_means(x)
-    size = x[:, GENE_NAMES["animal"].index("size")]
+    size = x[:, GENE_NAMES["animal"].index(gene)]
     m, s, w = mixture_1d(size, (size > size.mean()).astype(int))
     return {
         "animals": len(x),
@@ -75,23 +76,26 @@ def split(genes: np.ndarray) -> dict:
     }
 
 
-def snapshot(path: Path) -> dict:
-    out = {"update": int(re.search(r"(\d+)", path.name).group(1))}
+def snapshot(path: Path, gene: str = "size") -> dict:
+    out = {"update": int(re.search(r"(\d+)", path.name).group(1)), "prey": None, "pred": None}
     with np.load(path) as d:
         for name in ("prey", "pred"):
+            if gene == "diet" and name == "prey":  # only hunters use the diet gene; in grazers it just drifts
+                continue
             genes = pad_genes(d[f"{name}_genes"], ANIMAL_GENES)
-            out[name] = split(genes) if len(genes) >= MIN_ANIMALS else None
+            out[name] = split(genes, gene) if len(genes) >= MIN_ANIMALS else None
     return out
 
 
-def split_found(s: dict | None) -> bool:
-    return bool(s and s["separation"] >= SEPARATION_TARGET and s["minority"] >= MINORITY_TARGET
-                and s["size_gap"] >= GAP_TARGET)
+def split_found(s: dict | None, gene: str = "size") -> bool:
+    sep, gap = (DIET_SEPARATION, DIET_GAP) if gene == "diet" else (SEPARATION_TARGET, GAP_TARGET)
+    return bool(s and s["separation"] >= sep and s["minority"] >= MINORITY_TARGET and s["size_gap"] >= gap)
 
 
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--run-dir", required=True)
+    p.add_argument("--gene", default="size", choices=("size", "diet"), help="diet: hunters only (stage 9d)")
     args = p.parse_args(argv)
 
     run_dir = Path(args.run_dir)
@@ -100,15 +104,16 @@ def main(argv=None) -> int:
     if not paths:
         print(f"no gene snapshots in {run_dir}")
         return 2
-    snaps = [snapshot(q) for q in paths]
+    snaps = [snapshot(q, args.gene) for q in paths]
     last = snaps[-LAST:]
-    passed = len(last) == LAST and all(split_found(s["prey"]) or split_found(s["pred"]) for s in last)
-    (run_dir / "species.json").write_text(json.dumps({"snapshots": snaps, "pass": passed}, indent=1))
-    f = lambda s: "-" if s is None else (f"size D {s['separation']:.2f} minority {s['minority']:.2f} "
+    passed = len(last) == LAST and all(split_found(s["prey"], args.gene) or split_found(s["pred"], args.gene) for s in last)
+    (run_dir / ("species.json" if args.gene == "size" else f"species_{args.gene}.json")).write_text(json.dumps({"snapshots": snaps, "pass": passed}, indent=1))
+    f = lambda s: "-" if s is None else (f"{args.gene} D {s['separation']:.2f} minority {s['minority']:.2f} "
                                          f"gap {s['size_gap']:.2f}; most different gene {s['main_gene']}")
     for s in snaps:
         print(f"u{s['update']}: prey {f(s['prey'])}; predators {f(s['pred'])}")
-    print(f"size split (D >= {SEPARATION_TARGET}, minority >= {MINORITY_TARGET}, gap >= {GAP_TARGET}, "
+    sep, gap = (DIET_SEPARATION, DIET_GAP) if args.gene == "diet" else (SEPARATION_TARGET, GAP_TARGET)
+    print(f"{args.gene} split (D >= {sep}, minority >= {MINORITY_TARGET}, gap >= {gap}, "
           f"last {LAST} snapshots) "
           f"-> {'PASS' if passed else 'FAIL'}")
     return 0 if passed else 1

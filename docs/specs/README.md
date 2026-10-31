@@ -23,7 +23,9 @@ replaced with neutral wording; the engineering and the results are unchanged.
 | [Ambush](2026-10-30-ambush-design.md) | 8b: a viewer's idea, thickets and walking costs | PASS on two seeds; only matches chasing per meal |
 | [Omnivores](2026-10-30-omnivore-design.md) | 9a: hunters with a diet gene | FAIL on the second bar; hunters stopped hunting, and a poor gut went further |
 | [Gut ladder](2026-10-31-gut-ladder-design.md) | 9b: how bad must a gut be to keep a hunter hunting? | PASS on two seeds; a sharp switch, and few hunters |
-| [Winter](2026-10-31-winter-design.md) | 9c: do winters make real omnivores? | Training; no result yet |
+| [Winter](2026-10-31-winter-design.md) | 9c: do winters make real omnivores? | FAIL on two seeds; hunters went further toward plants |
+| [Two diets](2026-10-31-two-diets-design.md) | 9d: do hunters split into two kinds? | FAIL by the rule, with a real split; they take turns |
+| [Rich start](2026-10-31-bonanza-design.md) | 9e: is that split made by each world's rich start? | Training; no result yet |
 
 The league and predator-stall work of Stage 3b is written up in the [roadmap](../roadmap.md).
 A summary of all of it is in [results.md](../results.md).

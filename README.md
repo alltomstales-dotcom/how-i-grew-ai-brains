@@ -65,11 +65,14 @@ who was fat. They [didn't choose fat prey](docs/specs/2026-10-30-fatprey-design.
 **Then hunters got to eat plants.** They [stopped hunting](docs/specs/2026-10-30-omnivore-design.md). A simple chase rule now
 catches ten times what they do, and a poor gut for plants only pushed them further that way, against my prediction. The
 [next test](docs/specs/2026-10-31-gut-ladder-design.md) found the answer: at a very poor gut they hunt well again, with a
-sharp switch and few hunters. Hunters end at nearly all meat or nearly all plants, so
-[winters](docs/specs/2026-10-31-winter-design.md) are training now to see if changing food makes a real mixed diet, and that
-bar is already public.
+sharp switch and few hunters. [Winters](docs/specs/2026-10-31-winter-design.md) didn't produce a mixed diet.
 
-**So far, [7 stages pass and 11 fail](docs/results.md).** The failures have often taught more than the passes.
+**Then, by accident, a split.** After six failed tries to get one population to split in two, hunters at one gut
+[split into plant eaters and meat eaters](docs/specs/2026-10-31-two-diets-design.md), on fresh seeds. They aren't two species
+side by side: plant eaters boom and crash, meat eaters outlast them, and worlds restart from the mixed pool. Whether the rich
+start of each world makes the split is [training now](docs/specs/2026-10-31-bonanza-design.md), with its bar already public.
+
+**So far, [7 stages pass and 13 fail](docs/results.md).** The failures have often taught more than the passes.
 
 ## Watch it
 
