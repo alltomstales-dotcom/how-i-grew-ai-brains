@@ -22,7 +22,7 @@ from simulations.predprey import NUM_ACTIONS, WorldConfig  # noqa: F401  (re-exp
 OBS_CHANNELS = 11  # plant, toughness, prey, predators | own energy, speed, sight, breed | wall, burrow | own size
 PREY_CHANNEL = 2  # where prey show up in an observation
 WALL, BURROW = 1, 2  # State.terrain codes; 0 is open ground
-ANIMAL_GENES = 5  # speed, sight, breed, size, brain
+ANIMAL_GENES = 6  # speed, sight, breed, size, brain, diet
 PLANT_GENES = 2  # spread, toughness
 # (dx, dy) to the four neighbours a plant can seed: north, south, east, west.
 NEIGHBOURS = ((0, -1), (0, 1), (1, 0), (-1, 0))
@@ -39,7 +39,7 @@ class EvoConfig(WorldConfig):
     breed_span: float = 0.8  # threshold repro * (0.5 + span * b) stays below the energy cap
     gene_sigma: float = 0.05
     founder_noise: float = 0.05
-    founder_animal: tuple = (0.2, 0.5, 0.5, 0.5, 0.5)  # speed, sight, breed, size, brain
+    founder_animal: tuple = (0.2, 0.5, 0.5, 0.5, 0.5, 0.5)  # speed, sight, breed, size, brain, diet
     founder_plant: tuple = (0.5, 0.2)
     speed_cost: float = 1.0
     sight_cost: float = 0.5
@@ -90,9 +90,12 @@ class EvoConfig(WorldConfig):
     fickle: bool = False  # one plant kind feeds and the other poisons; which is hidden and flips at random (Stage 7c)
     flip_rate: float = 1 / 150  # chance per step that the good kind flips
     poison: float = 3.0  # energy lost for a bite of the bad kind
+    omnivore: bool = False  # hunters can eat plants; their diet gene splits what they get from meat and plants (Stage 9a)
+    plant_digest: float = 1.0  # how much of a grazer's plant meal a hunter with diet 0 gets
+    diet_fixed: bool = False  # the control: every hunter gets 0.5 of each, whatever its gene says
     fat_sense: bool = False  # animals can see how much energy visible prey hold (Stage 5b)
     stored_meals: bool = False  # a catch is worth what the prey stored, times meal_share, not a fixed catch_energy (Stage 5b)
-    meal_share: float = 1.25  # with prey at about 20 energy, about the usual catch_energy of 25
+    meal_share: float = 1.25  # meant to match catch_energy 25 with prey at about 20; prey eaten held about 9.5, so about 12 (5b v1)
     brain_tax: float = 0.0  # an animal with brain gene g keeps 1 - brain_tax * g of every meal, so rich and poor pay the same share (Stage 7b)
 
 
@@ -191,6 +194,46 @@ class FatPreyConfig(EvoConfig):
     """Stage 5b, from a viewer's comment: a predator's meal is worth what the grazer stored, and hunters can see who is fat."""
     fat_sense: bool = True
     stored_meals: bool = True
+
+
+@dataclass(frozen=True)
+class OmniConfig(EvoConfig):
+    """Stage 9a: hunters keep their diet gene's share of every catch, and the rest of a grazer's share of plants."""
+    omnivore: bool = True
+
+
+@dataclass(frozen=True)
+class OmniToughConfig(OmniConfig):
+    """Stage 9a: the same, with a gut built badly for plants."""
+    plant_digest: float = 0.3
+
+
+@dataclass(frozen=True)
+class OmniD03Config(OmniConfig):
+    """Stage 9b's ladder of guts: 0.03, 0.08 and 0.20."""
+    plant_digest: float = 0.03
+
+
+@dataclass(frozen=True)
+class OmniD08Config(OmniConfig):
+    plant_digest: float = 0.08
+
+
+@dataclass(frozen=True)
+class OmniD20Config(OmniConfig):
+    plant_digest: float = 0.2
+
+
+@dataclass(frozen=True)
+class OmniNeutralConfig(OmniConfig):
+    """Stage 9a's control: half of each for every hunter, so the diet gene only drifts."""
+    diet_fixed: bool = True
+
+
+@dataclass(frozen=True)
+class FatPreyRichConfig(FatPreyConfig):
+    """Stage 5b v2: the same idea with the average meal back at about the control's 25, so hunting pays as well as it does there."""
+    meal_share: float = 2.6
 
 
 @dataclass(frozen=True)
@@ -549,6 +592,8 @@ def observe(cfg: EvoConfig, state: State) -> tuple[jax.Array, jax.Array]:
             parts.append(jnp.where(seen, in_cover, False).astype(jnp.float32)[..., None])
         if cfg.fat_sense:  # how much energy the prey in each visible cell hold
             parts.append(jnp.where(seen[..., None], pp._windows(fat, sp.pos, cfg.view, cfg.size), 0.0))
+        if cfg.omnivore:  # the animal's own diet gene
+            parts.append(jnp.broadcast_to(sp.genes[:, None, None, 5:6], w.shape[:-1] + (1,)))
         if cfg.brains:  # last, so the network can read it to size the brain
             parts.append(jnp.broadcast_to(sp.genes[:, None, None, 4:5], w.shape[:-1] + (1,)))
         obs = jnp.concatenate(parts, axis=-1)
@@ -558,14 +603,14 @@ def observe(cfg: EvoConfig, state: State) -> tuple[jax.Array, jax.Array]:
 
 
 def obs_channels(cfg: EvoConfig) -> int:
-    return OBS_CHANNELS + int(cfg.signals) + int(cfg.hills) + int(cfg.thickets > 0) + int(cfg.fat_sense) + int(cfg.brains)
+    return OBS_CHANNELS + int(cfg.signals) + int(cfg.hills) + int(cfg.thickets > 0) + int(cfg.fat_sense) + int(cfg.omnivore) + int(cfg.brains)
 
 
 def num_actions(cfg: EvoConfig) -> int:
     return NUM_ACTIONS * (2 if cfg.signals else 1)
 
 
-GENE_NAMES = {"animal": ("speed", "sight", "breed", "size", "brain"), "plant": ("spread", "tough")}
+GENE_NAMES = {"animal": ("speed", "sight", "breed", "size", "brain", "diet"), "plant": ("spread", "tough")}
 
 
 class StepInfo(NamedTuple):
@@ -598,6 +643,9 @@ class StepInfo(NamedTuple):
     bad_bites: jax.Array
     eaten_energy: jax.Array  # energy held by the prey eaten this step
     eaten_baseline: jax.Array  # the same if each had held the living prey's mean energy
+    pred_bites: jax.Array  # omnivore worlds: plants eaten by hunters
+    pred_plant_gain: jax.Array  # energy hunters got from plants
+    pred_meat_gain: jax.Array  # energy hunters got from catches
 
 
 THREAT = 3  # Chebyshev cells (wrapped) at which a predator counts as close
@@ -635,6 +683,13 @@ def _kept(cfg: EvoConfig, sp: Species):
     if cfg.brains and cfg.brain_tax > 0:
         return 1.0 - cfg.brain_tax * sp.genes[:, 4]
     return 1.0
+
+
+def _meat_share(cfg: EvoConfig, pred: Species):
+    """Share of a catch a hunter keeps for its diet gene: all of it, outside omnivore worlds (Stage 9a)."""
+    if not cfg.omnivore:
+        return 1.0
+    return 0.5 if cfg.diet_fixed else pred.genes[:, 5]
 
 
 def _metabolise(cfg: EvoConfig, sp: Species, cap: float, base: float = 1.0) -> Species:
@@ -751,7 +806,7 @@ def _reproduce(cfg: EvoConfig, key, sp: Species, repro_energy: float) -> tuple[S
     ), can
 
 
-def _graze(cfg: EvoConfig, key, prey: Species, plant, plant_genes, bitten, good=0):
+def _graze(cfg: EvoConfig, key, prey: Species, plant, plant_genes, bitten, good=0, factor=1.0):
     """Prey on an unbitten plant eat it (lowest index first). A plant survives with
     probability equal to its toughness, but is then bitten until it regrows; the
     grazer gains less from tough plants."""
@@ -775,7 +830,7 @@ def _graze(cfg: EvoConfig, key, prey: Species, plant, plant_genes, bitten, good=
     plant = plant & ~kill
     good_bites = (eats & tasty).sum().astype(jnp.int32)
     bad_bites = (eats & ~tasty).sum().astype(jnp.int32)
-    return prey._replace(energy=prey.energy + gain), plant, (bitten | bit) & plant, good_bites, bad_bites
+    return prey._replace(energy=prey.energy + gain * factor), plant, (bitten | bit) & plant, good_bites, bad_bites
 
 
 def _plants(cfg: EvoConfig, key, plant, genes, ground, bitten, season):
@@ -841,7 +896,8 @@ def advance(cfg: EvoConfig, key: jax.Array, state: State, prey_act, pred_act) ->
 
     # 2. Predation.
     caught, eaten, meal = _predation(cfg, jax.random.fold_in(k_pred, 7), prey, pred)
-    pred = pred._replace(energy=pred.energy + meal * _kept(cfg, pred))
+    meat_gain = meal * _kept(cfg, pred) * _meat_share(cfg, pred)
+    pred = pred._replace(energy=pred.energy + meat_gain)
     eaten_energy = (prey.energy * eaten).sum()  # how fat the eaten were, against how fat the living were
     living = (prey.energy * prey.alive).sum() / jnp.maximum(prey.alive.sum(), 1)
     eaten_baseline = eaten.sum() * living
@@ -850,6 +906,13 @@ def advance(cfg: EvoConfig, key: jax.Array, state: State, prey_act, pred_act) ->
     # 3. Grazing.
     prey, plant, bitten, good_bites, bad_bites = _graze(cfg, k_graze, prey, state.plant, state.plant_genes,
                                                         state.bitten, state.good)
+
+    pred_bites, pred_plant_gain = jnp.int32(0), jnp.float32(0.0)
+    if cfg.omnivore:  # hunters take what the grazers left this step
+        before = pred.energy
+        pred, plant, bitten, g, b = _graze(cfg, jax.random.fold_in(k_graze, 1), pred, plant, state.plant_genes, bitten, state.good,
+                                           (1.0 - _meat_share(cfg, pred)) * cfg.plant_digest)
+        pred_bites, pred_plant_gain = g + b, (pred.energy - before).sum()
 
     # 4. Metabolism (with trait and signal costs) and caps.
     prey = prey._replace(energy=prey.energy - cfg.signal_cost * prey_sig)
@@ -914,6 +977,7 @@ def advance(cfg: EvoConfig, key: jax.Array, state: State, prey_act, pred_act) ->
         plant_cover=plant.mean(),
         prey_near=near, prey_near_burrow=near_hidden, prey_far=far, prey_far_burrow=far_hidden,
         good_bites=good_bites, bad_bites=bad_bites, eaten_energy=eaten_energy, eaten_baseline=eaten_baseline,
+        pred_bites=pred_bites, pred_plant_gain=pred_plant_gain, pred_meat_gain=jnp.sum(meat_gain),
     )
     return pp.StepResult(
         # A slot that died this step is silent, even if a newborn took it.
@@ -972,6 +1036,7 @@ def extra_metrics(info: StepInfo) -> dict:
     out["burrow_use_far"] = info.prey_far_burrow.sum() / jnp.maximum(info.prey_far.sum(), 1)
     out["good_bite_share"] = info.good_bites.sum() / jnp.maximum((info.good_bites + info.bad_bites).sum(), 1)
     out["fat_selectivity"] = info.eaten_energy.sum() / jnp.maximum(info.eaten_baseline.sum(), 1e-6)
+    out["pred_plant_share"] = info.pred_plant_gain.sum() / jnp.maximum((info.pred_plant_gain + info.pred_meat_gain).sum(), 1e-6)
     return out
 
 

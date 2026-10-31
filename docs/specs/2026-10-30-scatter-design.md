@@ -40,6 +40,10 @@ By steps since the clock restarted, pp-life-ff-0 (pp-life-ff-1 in brackets):
 | good-bite share, poor worlds | 0.366 (0.402) | 0.513 (0.533) | 0.676 (0.660) | 0.706 (0.714) |
 | good-bite share, rich worlds | 0.645 (0.635) | 0.701 (0.681) | 0.732 (0.715) | 0.770 (0.757) |
 
-**Finding.** Most of the no-memory "recovery" is survivorship. Poor worlds end, so later averages come from lucky worlds: about nine in ten at 80+ steps. A rise inside each kind of world remains, about 0.2 of the 0.27 at 40-80 when poor and rich are weighted equally. Grazers dying off inside a world could explain it, but that was not separated here, and this is not evidence of learning.
+**Finding (corrected below).** Most of the no-memory "recovery" is survivorship. Poor worlds end, so later averages come from lucky worlds: about nine in ten at 80+ steps. A rise inside each kind of world remains, about 0.2 of the 0.27 at 40-80 when poor and rich are weighted equally. Grazers dying off inside a world could explain it, but that was not separated here, and this is not evidence of learning.
 
 **What this changes in 7c.** The no-memory curve in that spec should not be read as recovery, and the two brains did not face the same plants when evolved bodies were used. The memory result stands on the cleaner comparison: the wiped control used the same brain and the same plants (0.853 against 0.658, and 0.759 against 0.603), and memory grazers keep taking 0.78-0.82 good bites even in poor worlds. Why the no-memory plant pool tilts to shrubs was not measured.
+
+## Correction (2026-10-30, while making the Part 9 Short)
+
+"Most of the recovery is survivorship" claimed too much. It holds for the plants around grazers: the grazer-weighted plant share tracks the share of bites taken in lucky worlds (0.72, 0.95, 1.0 against 0.72, 0.93, 0.99 on seed 0). It does not hold for good bites. Splitting the rise from 0-10 to 80+ steps into world selection and change inside each kind of world, selection accounts for 12-52% on seed 0 and 9-47% on seed 1, depending on the order of the split. So the rise inside each kind of world may be the larger part, and it remains unexplained. The test's FAIL and the warning about the 7c no-memory curve both stand.

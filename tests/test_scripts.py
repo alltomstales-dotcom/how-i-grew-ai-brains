@@ -112,7 +112,7 @@ def test_eval_script_on_tiny_evo_run(tmp_path):
     assert {"prey_evolved_share", "pred_evolved_share", "plant_shift", "evolved_pass", "plant_pass",
             "predator_ratio", "prey_ratio"} <= set(result)
     assert set(result["plant_shift"]) == {"spread", "tough"}
-    assert set(result["single_gene_share"]) == {"speed", "sight", "breed", "size", "brain"}
+    assert set(result["single_gene_share"]) == {"speed", "sight", "breed", "size", "brain", "diet"}
     assert result["genes"].endswith("genes_latest.npz")
     rc = eval_script.main(["--run-dir", str(tmp_path / "e2"), "--episodes", "4",
                            "--checkpoint", str(tmp_path / "e2" / "checkpoints" / "ckpt_000002.msgpack")])

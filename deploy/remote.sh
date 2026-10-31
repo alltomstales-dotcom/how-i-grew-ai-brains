@@ -75,7 +75,7 @@ case "$cmd" in
     mkdir -p runs
     docker run -d --name "$name" --label autolearn.mem_gb="$mem_gb" -e XLA_PYTHON_CLIENT_MEM_FRACTION="$FRAC" \
       "${COMMON[@]}" "$IMAGE" python -m scripts.train --mem-limit-gb "$limit" "$@" ;;
-  eval|league|compare|species|chase|signals|hills|episode3d|ambush|lifetime|scatter|meals)
+  eval|league|compare|species|chase|signals|hills|episode3d|ambush|lifetime|scatter|meals|omnivore)
     check_budget "$EVAL_GB"
     docker run --rm -e XLA_PYTHON_CLIENT_MEM_FRACTION="$FRAC" "${COMMON[@]}" "$IMAGE" python -m "scripts.$cmd" "$@" ;;
   dash)
@@ -105,6 +105,6 @@ case "$cmd" in
       docker ps -q --filter name='^autolearn-' | xargs -r docker stop
     fi ;;
   *)
-    echo "usage: remote.sh build|smoke|budget|train [--slot S] [--mem-gb G] [args]|eval [args]|league [args]|compare [args]|species [args]|chase [args]|signals [args]|hills [args]|episode3d [args]|ambush [args]|lifetime [args]|scatter [args]|meals [args]|dash|logs [n] [slot]|status|stop [slot]" >&2
+    echo "usage: remote.sh build|smoke|budget|train [--slot S] [--mem-gb G] [args]|eval [args]|league [args]|compare [args]|species [args]|chase [args]|signals [args]|hills [args]|episode3d [args]|ambush [args]|lifetime [args]|scatter [args]|meals [args]|omnivore [args]|dash|logs [n] [slot]|status|stop [slot]" >&2
     exit 1 ;;
 esac

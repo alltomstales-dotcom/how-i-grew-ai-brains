@@ -1,17 +1,57 @@
 {
-  "home": {"href": "../", "label": "about this project"},
-  "runs": [
-    {"id": "pp-001", "has_3d": true, "label": "Stage 1: blank brains and the stalemate"},
-    {"id": "pp-flank-002", "has_3d": true, "label": "Stage 6c: the pincer world"},
-    {"id": "pp-brain-pack-c01", "has_3d": true, "label": "Stage 7a: a brain gene in the pack world"},
-    {"id": "pp-life-gru-0", "has_3d": true, "label": "Stage 7c: food that poisons, brains with memory"},
-    {"id": "pp-hills-001", "has_3d": true, "label": "Stage 8a: hills"},
-    {"id": "pp-ambush-001", "has_3d": true, "label": "Stage 8b: ambush from thickets"}
-  ],
-  "moments": [
-    {"run": "pp-ambush-001", "follow": 36, "step": 15,
-     "caption": "Hunter #36 (gold arrow) has settled on one cell in a thicket. Nobody told it to. It makes four catches in this episode, at steps 23, 54, 66 and 119, each by stepping one cell and going straight back. Before the last one it waits 52 steps."},
-    {"run": "pp-life-gru-0", "follow": 354, "step": 166,
-     "caption": "Grazer #354 (gold arrow) is born knowing nothing about today's food. Nothing shows which plant is safe. Watch \"change this step\" at step 169: its first bite is poison. Its next 11 bites are all the kind that feeds. One animal, not the proof: the test measures whole populations."}
-  ]
+ "home": {
+  "href": "../",
+  "label": "about this project"
+ },
+ "runs": [
+  {
+   "id": "pp-001",
+   "has_3d": true,
+   "label": "Stage 1: blank brains and the stalemate"
+  },
+  {
+   "id": "pp-flank-002",
+   "has_3d": true,
+   "label": "Stage 6c: the pincer world"
+  },
+  {
+   "id": "pp-brain-pack-c01",
+   "has_3d": true,
+   "label": "Stage 7a: a brain gene in the pack world"
+  },
+  {
+   "id": "pp-life-gru-0",
+   "has_3d": true,
+   "label": "Stage 7c: food that poisons, brains with memory"
+  },
+  {
+   "id": "pp-hills-001",
+   "has_3d": true,
+   "label": "Stage 8a: hills"
+  },
+  {
+   "id": "pp-ambush-001",
+   "has_3d": true,
+   "label": "Stage 8b: ambush from thickets"
+  },
+  {
+   "id": "pp-omni-0",
+   "has_3d": true,
+   "label": "Stage 9a: hunters who can eat plants, and mostly don't hunt"
+  }
+ ],
+ "moments": [
+  {
+   "run": "pp-ambush-001",
+   "follow": 36,
+   "step": 15,
+   "caption": "Hunter #36 (gold arrow) has settled on one cell in a thicket. Nobody told it to. It makes four catches in this episode, at steps 23, 54, 66 and 119, each by stepping one cell and going straight back. Before the last one it waits 52 steps."
+  },
+  {
+   "run": "pp-life-gru-0",
+   "follow": 354,
+   "step": 166,
+   "caption": "Grazer #354 (gold arrow) is born knowing nothing about today's food. Nothing shows which plant is safe. Watch \"change this step\" at step 169: its first bite is poison. Its next 11 bites are all the kind that feeds. One animal, not the proof: the test measures whole populations."
+  }
+ ]
 }

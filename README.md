@@ -56,13 +56,18 @@ state, and the ability to do that was learned by the species.
 
 **Checking our own conclusion.** Brains with no memory seemed to recover later, so memory looked like mostly a gift of
 speed. Why would they recover at all? One guess was that the population remembers by where it lives. Scattering the
-grazers barely hurt them, so that test failed. Most of the "recovery" was survivorship: unlucky worlds died out, and the
-averages came from the lucky ones.
+grazers barely hurt them, so that test failed. Part of the "recovery" was survivorship: unlucky worlds died out, and the
+averages came from the lucky ones. The rest is still unexplained.
 
-**Next, a second viewer's idea.** A meal now gives a hunter energy according to what the prey stored, and hunters can see
-who is fat. It's [training now](docs/specs/2026-10-30-fatprey-design.md), and its bar is already public.
+**A viewer's idea that failed, twice.** A meal gave a hunter energy according to what the prey stored, and hunters could see
+who was fat. They [didn't choose fat prey](docs/specs/2026-10-30-fatprey-design.md), even in a fair retest.
 
-**So far, [6 stages pass and 9 fail](docs/results.md).** The failures have often taught more than the passes.
+**Then hunters got to eat plants.** They [stopped hunting](docs/specs/2026-10-30-omnivore-design.md). A simple chase rule now
+catches ten times what they do, and a poor gut for plants only pushed them further that way, against my prediction. The
+[next test](docs/specs/2026-10-31-gut-ladder-design.md) asks how bad a gut must be to keep a hunter hunting, and its bar is
+already public.
+
+**So far, [6 stages pass and 11 fail](docs/results.md).** The failures have often taught more than the passes.
 
 ## Watch it
 

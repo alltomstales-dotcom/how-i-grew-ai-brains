@@ -32,8 +32,8 @@ def test_stay_action_keeps_animals_in_place():
 
 def test_every_animal_has_a_size_gene_seen_in_the_last_channel():
     s = evo.reset(CFG, KEY)
-    assert s.prey.genes.shape[1] == evo.ANIMAL_GENES == 5
-    assert evo.GENE_NAMES["animal"] == ("speed", "sight", "breed", "size", "brain")
+    assert s.prey.genes.shape[1] == evo.ANIMAL_GENES == 6
+    assert evo.GENE_NAMES["animal"] == ("speed", "sight", "breed", "size", "brain", "diet")
     assert CFG.founder_animal[3] == 0.5
     assert evo.OBS_CHANNELS == 11
     s = evo.make_state(CFG, prey=[(5, 5, 20.0, 0.0, 0.5, 0.5, 0.8)])
@@ -172,12 +172,12 @@ def test_sexual_breeding_needs_a_mate_nearby_and_mixes_genes():
                           jnp.full(c.max_pred, STILL, jnp.int32))
         assert int(res.info.prey_births) == 1  # only the ready one breeds
         kids.append(np.asarray(res.state.prey.genes[2]))
-    kids = np.array(kids)
+    kids = np.array(kids)[:, :5]  # both parents were written without a diet gene
     assert set(np.unique(kids)) <= {0.0, 1.0}  # each gene from one parent or the other
     assert 0 < kids.mean() < 1 and len({tuple(k) for k in kids}) > 2  # genes mix
     # Without mating the lone animal breeds on its own and copies itself.
     res = step(cfg(prey_repro_energy=10.0, breed_span=0.0), lone)
-    assert int(res.info.prey_births) == 1 and np.allclose(np.asarray(res.state.prey.genes[2]), 0.0)
+    assert int(res.info.prey_births) == 1 and np.allclose(np.asarray(res.state.prey.genes[2])[:5], 0.0)
 
 
 def test_three_gene_snapshots_load_with_founder_size():

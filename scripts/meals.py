@@ -59,16 +59,19 @@ def hunting(world, cfg, prey_pi, pred_pi, key, episodes: int, pool=None) -> dict
             i = res.info
             acc = acc + jnp.stack([i.eaten_energy.sum(), i.eaten_baseline.sum(), i.catches.sum(), state.pred.alive.sum(),
                                    (state.prey.energy * state.prey.alive).sum(), state.prey.alive.sum(),
-                                   (state.prey.genes[..., 2] * state.prey.alive).sum()]).astype(jnp.float32)
+                                   (state.prey.genes[..., 2] * state.prey.alive).sum(),
+                                   (state.prey.energy ** 2 * state.prey.alive).sum()]).astype(jnp.float32)
             return (res.state, acc, forget_after(mem, res)), None
 
-        init = (state, jnp.zeros(7, jnp.float32), pair_memory(prey_pi, pred_pi, state))
+        init = (state, jnp.zeros(8, jnp.float32), pair_memory(prey_pi, pred_pi, state))
         (_, acc, _), _ = jax.lax.scan(body, init, jax.random.split(k_steps, cfg.max_steps))
         return acc
 
-    e, b, c, p, pe, pa, br = (float(v) for v in np.asarray(run(key)))
+    e, b, c, p, pe, pa, br, sq = (float(v) for v in np.asarray(run(key)))
+    mean = pe / max(pa, 1.0)
     return {"selectivity": e / max(b, 1e-6), "energy_per_catch": e / max(c, 1.0), "catches_per_pred_step": c / max(p, 1.0),
-            "catches": c, "prey_mean_energy": pe / max(pa, 1.0), "prey_breed_gene": br / max(pa, 1.0)}
+            "catches": c, "prey_mean_energy": mean, "prey_energy_sd": max(sq / max(pa, 1.0) - mean ** 2, 0.0) ** 0.5,
+            "prey_breed_gene": br / max(pa, 1.0)}
 
 
 def load(path: Path, evolved: bool):
@@ -109,7 +112,7 @@ def main(argv=None) -> int:
     control = hunting(w2, c2, p2, q2, key, args.episodes, pool2)
     out = {"run": run, "blind": blind, "control": control, **verdict(run, control, blind)}
     (run_dir / "meals.json").write_text(json.dumps(out, indent=1))
-    f = lambda d: f"selectivity {d['selectivity']:.3f}, energy per catch {d['energy_per_catch']:.1f}, catches {d['catches_per_pred_step']:.4f}, prey energy {d['prey_mean_energy']:.1f}, breed gene {d['prey_breed_gene']:.3f}"
+    f = lambda d: f"selectivity {d['selectivity']:.3f}, energy per catch {d['energy_per_catch']:.1f}, catches {d['catches_per_pred_step']:.4f}, prey energy {d['prey_mean_energy']:.1f} (sd {d['prey_energy_sd']:.1f}), breed gene {d['prey_breed_gene']:.3f}"
     print(f"stored meals: {f(run)}\nno fat sense: {f(blind)}\ncontrol:      {f(control)}")
     print(f"selectivity {out['select_ratio']:.2f}x control (bar {SELECT_TARGET}), meal value drops {100 * out['blind_drop']:.1f}% blind (bar {100 * DROP_TARGET:.0f}%): {'PASS' if out['pass'] else 'FAIL'}")
     return 0

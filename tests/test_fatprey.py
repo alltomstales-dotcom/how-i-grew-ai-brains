@@ -52,6 +52,7 @@ def test_the_scripts_run_on_tiny_runs(tmp_path):
     import scripts.scatter as scatter
     import scripts.train as train
     assert get_world("fatprey")[1]().stored_meals and not get_world("fatprey_fixed")[1]().stored_meals
+    assert get_world("fatprey_rich")[1]().stored_meals and get_world("fatprey_rich")[1]().meal_share == 2.6
     common = ["--tiny", "--runs-dir", str(tmp_path), "--updates", "2"]
     assert train.main([*common, "--world", "fatprey", "--run-id", "a"]) == 0
     assert train.main([*common, "--world", "fatprey_fixed", "--run-id", "b"]) == 0

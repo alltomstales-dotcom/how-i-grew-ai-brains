@@ -26,7 +26,14 @@ WORLDS = {
     "flank_hills": (evo, evo.FlankHillsConfig),
     "ambush": (evo, evo.AmbushConfig),
     "fickle": (evo, evo.FickleConfig),
+    "omni": (evo, evo.OmniConfig),
+    "omni_tough": (evo, evo.OmniToughConfig),
+    "omni_neutral": (evo, evo.OmniNeutralConfig),
+    "omni_d03": (evo, evo.OmniD03Config),
+    "omni_d08": (evo, evo.OmniD08Config),
+    "omni_d20": (evo, evo.OmniD20Config),
     "fatprey": (evo, evo.FatPreyConfig),
+    "fatprey_rich": (evo, evo.FatPreyRichConfig),
     "fatprey_fixed": (evo, evo.FatPreyFixedConfig),
 }
 

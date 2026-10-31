@@ -14,16 +14,17 @@ failed world as its own attempt, there are 16 failures. Some passes are weaker t
 | 3b | Does training against past opponents stop the hunters stalling? | Predator Elo rises by 100 | **FAIL:** -11 to +77. Hunters stall against prey that never learn too, and a hand-written chase does 0.83-1.06x as well in the evolution world. It's a ceiling on the world, not a learning failure | [roadmap](roadmap.md#stage-3-portable-brains-and-a-league-in-progress) |
 | 4 | Does memory help in a seasonal world? | 1.2x on prey lifetime or catches, at matched world-steps | **FAIL:** 0.99x and 1.13x. Memory hunters learn faster per step, but feed-forward catches up | [spec](specs/2026-10-14-memory-design.md) |
 | 5a | Can one founder pool split into two species? | Separation D of at least 2, minority of at least 0.2, gap of at least 0.3, in the last 3 snapshots | **FAIL, six versions:** the last was a near miss (D 1.95 on one snapshot). Without mating two size groups hold apart; two-parent breeding prevents it | [spec](specs/2026-10-14-speciation-design.md) |
-| 5b | If a meal is worth what the prey stored? (a viewer's idea) | Hunters pick fat grazers 1.15x as selectively as the control, and meal value falls 10% when they can't see fat, on two seeds | **Training now.** Built, with the bar on record and no result yet | [spec](specs/2026-10-30-fatprey-design.md) |
+| 5b | If a meal is worth what the prey stored? (a viewer's idea) | Hunters pick fat grazers 1.15x as selectively as the control, and meal value falls 10% when they can't see fat, on two seeds | **FAIL, twice:** 1.10x and 0.97x, then 1.07x and 1.00x in a fair retest. Hunters don't choose fat prey, and we can't yet say why | [spec](specs/2026-10-30-fatprey-design.md) |
 | 6a | If a catch takes two hunters, do they learn teamwork? | 1.5x a lone chaser | **FAIL:** 1.02-1.04x. Chasers meet at the nearest prey anyway | [spec](specs/2026-10-14-pack-hunting-design.md) |
 | 6b | Do animals learn to signal? | Catches drop 10% with signals blanked | **FAIL:** under 1%. A later review found signals could barely reach beyond sight, which weakens this result | [spec](specs/2026-10-14-signals-design.md) |
 | 6c | If hunters must surround prey? | 1.5x a lone chaser, on two seeds | **PASS:** 3.0-3.8x in all eight readings. The first stage where learning clearly beats a simple rule. Signals help evolved hunters; in founder bodies only on one seed | [spec](specs/2026-10-14-flanking-design.md) |
 | 7a | Does evolution buy brain where thinking pays? | Hunter brain gene 0.1 higher in flank than in pack, on two seeds | **FAIL, three tries:** at a flat cost brain size follows food, not the value of thinking (0.19 flank, 0.50 pack) | [spec](specs/2026-10-14-brain-size-design.md) |
 | 7b | Same question, with the brain taxed as a share of each meal? | Gap of +0.12 | **PASS:** 0.53 against 0.18 and 0.69 against 0.38 on seed 0; 0.47 against 0.14 on seed 1 | [spec](specs/2026-10-29-brain-tax-design.md) |
 | 7c | Can an animal learn within one life, when food turns to poison at random? | Memory beats no memory by 0.10 at 10-40 steps after a flip, and beats itself at 0-10 by 0.05, on two seeds | **PASS:** +0.218 and +0.122 (seed 1 only narrowly); recovery +0.398 and +0.272. See the limits below | [spec](specs/2026-10-30-lifetime-design.md) |
-| 7d | Do brains with no memory use the map as their memory? | Scattering the grazers drops their good bites by 0.15, on two seeds, and memory brains drop less than half as much | **FAIL:** drops of 0.035 and 0.076. It was mostly survivorship: worlds where the rare plant feeds die out, leaving the lucky ones. This changes how 7c should be read | [spec](specs/2026-10-30-scatter-design.md) |
+| 7d | Do brains with no memory use the map as their memory? | Scattering the grazers drops their good bites by 0.15, on two seeds, and memory brains drop less than half as much | **FAIL:** drops of 0.035 and 0.076. Survivorship explains the plants around them, as worlds where the rare plant feeds die out, but only 9-52% of the rise in good bites. The rest is unexplained. This changes how 7c should be read | [spec](specs/2026-10-30-scatter-design.md) |
 | 8a | Do hills matter? | 10% worse with the height channel zeroed | **FAIL:** predators 4.8% and -5.4%, prey 2%. Hunters do take the high ground (78% against 64% at random) in plain hills | [spec](specs/2026-10-29-hills-design.md) |
 | 8b | Do hunters learn to ambush, if walking costs energy and thickets hide them? (a viewer's idea) | 1.3x the map's thicket share, 1.5x random's stillness, 10% fewer catches when thickets stop hiding them, on two seeds | **PASS:** 64-65% in thickets (map 25%), 90-93% still (random 20%), 68-72% fewer catches. See the limits below | [spec](specs/2026-10-30-ambush-design.md) |
+| 9a | If hunters can eat plants, do they leave meat, and does a poor gut keep them hunting? | Diet 0.15 below a control where the gene does nothing, and 0.10 higher with a poor gut, on two seeds | **FAIL on the second:** diet fell to 0.10 (control 0.46) and they stopped hunting, but a poor gut went lower still, 0.05, as hunters fell from 32 to 5 | [spec](specs/2026-10-30-omnivore-design.md) |
 
 ## Limits worth repeating
 
@@ -35,9 +36,11 @@ way to make the same living, not a better one.
 
 **Lifetime learning (7c): "memory is mostly speed", and why that is now in question.** Good bites by brains with no
 memory rise later too: by 40+ steps they reach 0.75, against 0.83 and 0.74 with memory. So 7c concluded that memory's
-gift is speed. Stage 7d then found most of that rise is survivorship, not recovery: their evolved plant pools are about
+gift is speed. Stage 7d then found part of that rise is survivorship, not recovery: their evolved plant pools are about
 85% shrubs, worlds where the rare kind feeds die out, and about nine in ten living worlds at 80+ steps are the lucky
-kind. A smaller rise inside each kind of world remains unexplained. The two brains also did not face the same plants,
+kind. We first wrote "most of it". A later check found that selection explains only 9-52% of the rise in good bites,
+depending on seed and how it is split, so the rise inside each kind of world may be the larger part, and it remains
+unexplained. The two brains also did not face the same plants,
 so the no-memory comparison is weaker than it looked. Whether memory gives more than speed was not separately tested.
 The result stands on the cleaner control below. Seed 1 is weaker, and shows no gain in prey lifetime (35.7 against 36.0).
 
@@ -52,5 +55,9 @@ coordination is learned when a simple rule fails, not that hunters are generally
 
 **Brain tax (7b): a fair cost changes the answer.** The flat-cost result reversed under a tax. The result rests on the
 idea that a share of income is the fair comparison, and that was chosen by us.
+
+**Stored meals (5b): the first test was unfair.** We assumed prey held about 20 energy, and they held about 9.5, so a meal paid about 12 where the control's paid 25. The fair retest failed too, so the idea is closed here. Grazers do vary a lot (energy 9 with a spread of 5), though that is across a world, not what one hunter sees at one moment. This says nothing about real predators.
+
+**Omnivores (9a): one bar passed easily and one failed backwards.** The poor gut was meant to keep hunters hunting, and that was my prediction. Even where the gene does nothing, plants give hunters 0.97 of their energy, so the brains stop hunting without any change in the gut. The next stage tests a rough sum that puts the switch at a gut of about 0.07.
 
 **Stage 2: tests can pass for the wrong reason.** That discovery is why controls are part of every test after it.
