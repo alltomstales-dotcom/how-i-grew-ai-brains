@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How I grew AI brains from zero</title>
+<meta name="description" content="Two species start with blank brains and learn by trial and error while their bodies and brains evolve. Watch real trained animals in 3-D in your browser.">
+<link rel="icon" href="data:,">
+<style>
+  :root { --bg:#0d1117; --fg:#e6edf3; --mut:#9aa4ae; --card:#161b22; --brd:#30363d; --acc:#58a6ff; --gold:#ffb000; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:17px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  main { max-width:860px; margin:0 auto; padding:40px 20px 70px; }
+  h1 { font-size:clamp(30px, 6vw, 46px); line-height:1.1; margin:0 0 14px; }
+  h2 { font-size:23px; margin:44px 0 10px; }
+  p { margin:0 0 14px; }
+  a { color:var(--acc); }
+  .lede { font-size:20px; color:var(--mut); }
+  .go { display:inline-block; background:var(--gold); color:#14100a; font-weight:650; padding:11px 20px; border-radius:8px; text-decoration:none; margin:8px 0 22px; }
+  img { width:100%; display:block; border-radius:10px; border:1px solid var(--brd); }
+  .cards { display:grid; gap:14px; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); margin-top:14px; }
+  .card { display:block; background:var(--card); border:1px solid var(--brd); border-radius:10px; padding:16px; color:inherit; text-decoration:none; }
+  .card:hover { border-color:var(--acc); }
+  .card b { display:block; font-size:18px; margin-bottom:4px; }
+  .card span { color:var(--mut); font-size:15px; }
+  ul.plain { list-style:none; padding:0; margin:0; }
+  ul.plain li { padding:8px 0; border-bottom:1px solid var(--brd); display:flex; gap:12px; justify-content:space-between; }
+  .soon { color:var(--mut); white-space:nowrap; }
+  .num { color:var(--mut); margin-right:6px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>How I grew AI brains from zero</h1>
+  <p class="lede">Two species start with blank brains. Nobody tells them how to hunt, hide or eat. Each stage adds one pressure to their world, with a pass bar written down before any training run, and most of the tests fail.</p>
+  <a class="go" href="watch/">▶ Watch the animals in 3-D</a>
+  <a href="watch/?run=pp-ambush-001&amp;follow=36&amp;step=15&amp;speed=4&amp;play=1"><img src="img/ambush.jpg" alt="Hunter 36 waiting in a thicket, in the 3-D replay" width="1280" height="720"></a>
+
+  <h2>Two moments to start with</h2>
+  <p>These are real episodes from trained runs. Your browser replays what the animals did, and you can click any animal to follow it.</p>
+  <div class="cards">
+    <a class="card" href="watch/?run=pp-ambush-001&amp;follow=36&amp;step=15&amp;speed=4&amp;play=1">
+      <b>Hunter #36 waits</b>
+      <span>A viewer suggested that hunters should hide. This one settled on one cell in a thicket and made four catches, each by stepping one cell and going straight back. Across the runs, hiding pays, but only matches chasing per meal.</span>
+    </a>
+    <a class="card" href="watch/?run=pp-life-gru-0&amp;follow=354&amp;step=166&amp;speed=2&amp;play=1">
+      <b>Grazer #354 tastes</b>
+      <span>One plant feeds and the other poisons, and nothing shows which. Its first bite is poison, and its next 11 are all the kind that feeds. Memory like this is mostly a gift of speed: brains with none recover too, later.</span>
+    </a>
+  </div>
+
+  <h2>The videos</h2>
+  <p>The series is on <a href="https://www.youtube.com/@NeatScienceStuff">NeatScienceStuff</a>, with a <a href="https://www.youtube.com/playlist?list=PLef2iL8vMOzs">playlist</a>. New parts go out at 11 pm US Central.</p>
+  <ul class="plain" id="videos"><li><a href="https://www.youtube.com/@NeatScienceStuff">See the channel</a></li></ul>
+
+  <h2>Build it with us</h2>
+  <p>The ambush stage came from a viewer's comment. <a href="https://github.com/alltomstales-dotcom/how-i-grew-ai-brains/issues/new?template=suggest-an-experiment.yml">Suggest an experiment</a>, no code needed, and follow every idea and its result in <a href="https://github.com/alltomstales-dotcom/how-i-grew-ai-brains/blob/main/SUGGESTIONS.md">the suggestions list</a>.</p>
+
+  <h2>Read more</h2>
+  <ul>
+    <li><a href="https://github.com/alltomstales-dotcom/how-i-grew-ai-brains">The code and the story so far</a></li>
+    <li><a href="https://github.com/alltomstales-dotcom/how-i-grew-ai-brains/blob/main/docs/how-it-works.md">How it works</a>, in plain language</li>
+    <li><a href="https://github.com/alltomstales-dotcom/how-i-grew-ai-brains/blob/main/docs/results.md">Every stage's result</a>, failures and caveats included</li>
+  </ul>
+</main>
+<script>
+fetch("videos.json").then((r) => r.json()).then((data) => {
+  const list = document.getElementById("videos");
+  list.replaceChildren(...data.videos.map((v) => {
+    const li = document.createElement("li"), title = document.createElement(v.url ? "a" : "span");
+    title.textContent = v.title;
+    if (v.url) title.href = v.url;
+    const num = Object.assign(document.createElement("span"), { className: "num", textContent: `${v.part}.` });
+    const left = document.createElement("span");
+    left.append(num, title);
+    li.append(left);
+    if (!v.url) li.append(Object.assign(document.createElement("span"), { className: "soon", textContent: `coming ${v.date}` }));
+    return li;
+  }));
+}).catch(() => {});
+</script>
+</body>
+</html>

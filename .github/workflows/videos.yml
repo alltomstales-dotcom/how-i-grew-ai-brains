@@ -1,0 +1,30 @@
+name: Link new videos
+
+# Parts go public at 11 pm US Central, so this runs just after that in both CDT and CST.
+on:
+  schedule:
+    - cron: "10 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  link:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Link any part that has gone public
+        env:
+          SCHEDULED_VIDEOS: ${{ secrets.SCHEDULED_VIDEOS }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 tools/videos.py go-live
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -am "videos: link parts that have gone public"
+            git push
+            gh workflow run pages.yml
+          fi

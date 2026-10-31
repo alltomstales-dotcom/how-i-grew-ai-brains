@@ -1,0 +1,14 @@
+{
+  "series": "How I grew AI brains from zero",
+  "channel": "https://www.youtube.com/@NeatScienceStuff",
+  "videos": [
+    {"part": 1, "title": "I gave two species blank AI brains. The hunters starved.", "date": "Oct 29", "url": "https://youtu.be/Y4Up4N4FfQI"},
+    {"part": 2, "title": "Evolution made my AI hunters nearly blind", "date": "Oct 30", "url": null},
+    {"part": 3, "title": "My AI hunters barely beat one line of code", "date": "Oct 31", "url": null},
+    {"part": 4, "title": "My AI hunters only got smart when they had to surround their prey", "date": "Nov 1", "url": null},
+    {"part": 5, "title": "I let evolution decide how big my AI's brain should be", "date": "Nov 2", "url": null},
+    {"part": 6, "title": "I gave my AI hunters hills. They took the high ground.", "date": "Nov 3", "url": null},
+    {"part": 7, "title": "A viewer said my AI hunters should hide. So I let them.", "date": "Nov 4", "url": null},
+    {"part": 8, "title": "I gave my AI creatures poisoned food, and they learned to taste", "date": "Nov 5", "url": null}
+  ]
+}

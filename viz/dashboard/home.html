@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>autolearn</title>
+<style>
+  :root { --bg:#111418; --panel:#1b2027; --line:#2a313b; --text:#e6e6e6; --muted:#9aa4b2; --done:#5fb36b; --running:#f5c542; --next:#4fb3f6; --planned:#6b7480; --fail:#e04848; }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 16px; background: var(--bg); color: var(--text); font: 15px/1.5 system-ui, sans-serif; }
+  main { max-width: 1100px; margin: 0 auto; }
+  h1 { font-size: 22px; margin: 0 0 6px; }
+  h2 { font-size: 17px; margin: 28px 0 10px; }
+  a { color: var(--next); }
+  .muted { color: var(--muted); }
+  .panel { background: var(--panel); border-radius: 8px; padding: 12px 14px; }
+  .now { border-left: 4px solid var(--running); margin-top: 12px; }
+  details summary { cursor: pointer; color: var(--muted); }
+  details ul { margin: 8px 0 0; padding-left: 20px; }
+  .runs { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr)); }
+  .run h3 { margin: 0; font-size: 16px; }
+  .chip { display: inline-block; font-size: 12px; padding: 1px 8px; border-radius: 10px; margin-left: 6px; color: #111; vertical-align: 2px; }
+  .chip.running, .chip.s-running { background: var(--running); }
+  .chip.ended { background: var(--planned); color: var(--text); }
+  .chip.s-done { background: var(--done); }
+  .chip.s-next { background: var(--next); }
+  .chip.s-planned { background: var(--planned); color: var(--text); }
+  .stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px 12px; margin: 8px 0; font-size: 13px; }
+  .stats span { color: var(--muted); }
+  .pass { color: var(--done); } .fail { color: var(--fail); }
+  .stages { display: grid; gap: 10px; }
+  .stage { border-left: 4px solid var(--planned); }
+  .stage.s-done { border-color: var(--done); } .stage.s-running { border-color: var(--running); } .stage.s-next { border-color: var(--next); }
+  .stage h3 { margin: 0 0 4px; font-size: 16px; }
+  .cols { display: grid; gap: 4px 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); margin-top: 6px; }
+  .cols h4 { margin: 4px 0 2px; font-size: 13px; color: var(--muted); font-weight: 600; }
+  .cols ul { margin: 0; padding-left: 18px; font-size: 14px; }
+  .result { margin-top: 6px; font-size: 14px; }
+  footer { margin: 28px 0 8px; font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+  <h1 id="title">autolearn</h1>
+  <div class="muted" id="summary"></div>
+  <div class="panel now" id="now"></div>
+  <details class="panel" style="margin-top:10px"><summary>How it works</summary><ul id="explainer"></ul></details>
+
+  <h2>Runs</h2>
+  <div class="runs" id="runs"><div class="muted">loading…</div></div>
+
+  <h2>Roadmap</h2>
+  <div class="stages" id="stages"></div>
+
+  <h2>Lessons so far</h2>
+  <ul id="lessons"></ul>
+
+  <footer class="muted"><span id="links"></span><br><span id="stamp"></span></footer>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+const el = (tag, attrs = {}, ...kids) => {
+  const n = Object.assign(document.createElement(tag), attrs);
+  n.append(...kids.filter(k => k !== null && k !== undefined));
+  return n;
+};
+const fmt = (v, d = 2) => typeof v === "number" ? v.toFixed(d) : "–";
+const list = items => el("ul", {}, ...items.map(t => el("li", {textContent: t})));
+
+function verdict(ok, text) { return el("span", {className: ok ? "pass" : "fail", textContent: `${text} ${ok ? "pass" : "fail"}`}); }
+
+function runCard(r) {
+  const l = r.last || {};
+  const stats = [
+    ["update", l.update ?? "–"], ["world-steps", l.env_steps ? l.env_steps.toLocaleString() : "–"],
+    ["hours", l.wall_s ? (l.wall_s / 3600).toFixed(2) : "–"], ["steps/s", l.sps ? Math.round(l.sps).toLocaleString() : "–"],
+    ["prey / world", fmt(l.prey_alive, 1)], ["predators / world", fmt(l.pred_alive, 1)],
+    ["catches / step", fmt(l.catches_per_step, 3)],
+  ];
+  if ("prey_speed" in l) stats.push(
+    ["prey speed · sight · breed · size", `${fmt(l.prey_speed)} · ${fmt(l.prey_sight)} · ${fmt(l.prey_breed)} · ${fmt(l.prey_size)}`],
+    ["predator speed · sight · breed · size", `${fmt(l.pred_speed)} · ${fmt(l.pred_sight)} · ${fmt(l.pred_breed)} · ${fmt(l.pred_size)}`],
+    ["plant spread · toughness", `${fmt(l.plant_spread)} · ${fmt(l.plant_tough)}`],
+    ["plant cover", fmt(l.plant_cover)], ["generations (prey)", fmt(l.prey_gen, 0)]);
+  if (l.burrow_use_near > 0 || l.burrow_use_far > 0) stats.push(
+    ["prey in burrows: threat · none", `${fmt(l.burrow_use_near)} · ${fmt(l.burrow_use_far)}`]);
+  const box = el("div", {className: "stats"});
+  for (const [k, v] of stats) box.append(el("div", {}, el("span", {textContent: k + " "}), String(v)));
+  const ev = r.eval;
+  let evalLine = el("div", {className: "muted", textContent: r.status === "running" ? "evaluation after the run" : "not evaluated"});
+  if (ev) {
+    evalLine = el("div", {});
+    if ("predator_ratio" in ev) evalLine.append(verdict(ev.predator_pass, `predators ${fmt(ev.predator_ratio)}×`), " · ",
+                                                verdict(ev.prey_pass, `prey ${fmt(ev.prey_ratio)}×`));
+    if ("evolved_pass" in ev) evalLine.append(el("br"), verdict(ev.evolved_pass,
+      `evolved share prey ${fmt(ev.prey_evolved_share)} / pred ${fmt(ev.pred_evolved_share)}`), " · ",
+      verdict(ev.plant_pass, "plants"));
+    if ("burrow_pass" in ev) evalLine.append(" · ", verdict(ev.burrow_pass, "hides from predators"));
+  }
+  if (r.league) {
+    const g = r.league, sign = v => (v >= 0 ? "+" : "") + Math.round(v);
+    evalLine.append(el("br"), verdict(g.pred_progress, `predator Elo ${sign(g.pred_gain)}`), " · ",
+                    verdict(g.prey_progress, `prey Elo ${sign(g.prey_gain)}`));
+  }
+  if (r.species) {
+    const d = s => s ? `D ${fmt(s.separation)}, minority ${fmt(s.minority)} (${s.main_gene})` : "-";
+    evalLine.append(el("br"), verdict(r.species.pass, "species split"),
+                    ` · prey ${d(r.species.prey)} · predators ${d(r.species.pred)}`);
+  }
+  if (r.compare) {
+    const c = r.compare;
+    evalLine.append(el("br"), verdict(c.pass, `vs ${c.baseline}`),
+                    ` · prey live ${fmt(c.prey_ratio)}x as long · predators catch ${fmt(c.catch_ratio)}x as often`);
+  }
+  const packs = ["pack", "signals", "flank", "flank_signals"].includes(r.world);  // the 1.5x bar is Stage 6's
+  for (const [c, bodies] of [[r.chase, "founder"], [r.chase_evolved, "evolved"]]) {
+    if (!c) continue;
+    const x = 1 / Math.max(c.ratio_vs_trained_prey, 1e-9), text = `learned predators catch ${fmt(x)}x as often as a lone chaser`;
+    evalLine.append(el("br"), packs ? verdict(x >= 1.5, text) : text, ` (against trained prey, ${bodies} bodies)`);
+  }
+  for (const [s, bodies] of [[r.signals, "founder"], [r.signals_evolved, "evolved"]]) {
+    if (!s) continue;
+    evalLine.append(el("br"), verdict(s.pass, `catches lost without signals ${fmt(100 * s.drop, 1)}%`),
+                    ` (${bodies} bodies) · predators signal ${fmt(100 * s.pred_rate, 0)}% (${fmt(s.pred_mi_bits, 3)} bits)` +
+                    ` · prey ${fmt(100 * s.prey_rate, 0)}% (${fmt(s.prey_mi_bits, 3)} bits)`);
+  }
+  return el("div", {className: "panel run"},
+    el("h3", {}, el("a", {href: r.id + "/", textContent: r.id}), el("span", {className: "chip " + r.status, textContent: r.status})),
+    el("div", {className: "muted", textContent: `${r.world} world${r.learn === false ? " · control: brains never learn" : ""}` +
+      ` · started ${r.started.replace("T", " ").replace("Z", " UTC")}${r.done ? ` · ended (${r.done.reason.replace("_", " ")})` : ""}`}),
+    box, evalLine,
+    r.latest_clip ? el("div", {}, el("a", {href: `${r.id}/${r.latest_clip}`, textContent: "latest clip"}), " · ",
+                      el("a", {href: r.id + "/", textContent: "charts and clips"}),
+                      ...(r.has_3d ? [" · ", el("a", {href: `world3d.html?run=${encodeURIComponent(r.id)}`, textContent: "3-D replay"})] : [])) : null);
+}
+
+function stageCard(s) {
+  const cols = el("div", {className: "cols"});
+  for (const [title, items] of [["Built", s.built], ["Remaining", s.remaining], ["Coming", s.coming]]) {
+    if (items && items.length) cols.append(el("div", {}, el("h4", {textContent: title}), list(items)));
+  }
+  return el("div", {className: `panel stage s-${s.status}`},
+    el("h3", {}, `${s.id}. ${s.name}`, el("span", {className: `chip s-${s.status}`, textContent: s.status})),
+    el("div", {className: "muted", textContent: s.goal}), cols,
+    s.result ? el("div", {className: "result"}, el("b", {textContent: "Result: "}), s.result) : null);
+}
+
+async function refresh() {
+  try {
+    const [rm, rr] = await Promise.all([fetch("roadmap.json", {cache: "no-store"}), fetch("runs.json", {cache: "no-store"})]);
+    const road = await rm.json();
+    const runs = rr.ok ? await rr.json() : {runs: []};
+    $("title").textContent = road.title;
+    $("summary").textContent = road.summary;
+    $("now").replaceChildren(el("b", {textContent: "Now: "}), road.now);
+    $("explainer").replaceChildren(...road.explainer.map(t => el("li", {textContent: t})));
+    $("runs").replaceChildren(...(runs.runs.length ? runs.runs.map(runCard) : [el("div", {className: "muted", textContent: "no runs yet"})]));
+    $("stages").replaceChildren(...road.stages.map(stageCard));
+    $("lessons").replaceChildren(...road.lessons.map(t => el("li", {textContent: t})));
+    $("links").replaceChildren(...road.links.flatMap((l, i) => [i ? " · " : "", el("a", {href: l.href, textContent: l.label})]));
+    $("stamp").textContent = `roadmap updated ${road.updated} · runs refreshed ${runs.generated || "–"} · page refreshes every 60 s`;
+  } catch (e) {
+    $("runs").textContent = "could not load: " + e;
+  }
+}
+refresh();
+setInterval(refresh, 60000);
+</script>
+</body>
+</html>

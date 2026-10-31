@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>autolearn run</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+<style>
+  :root { --bg:#111418; --panel:#1b2027; --text:#e6e6e6; --muted:#9aa4b2; --prey:#e8e8e8; --pred:#e04848; --accent:#5fb36b; --speed:#f5c542; --sight:#4fb3f6; --breed:#c77dff; --size:#ff8c42; --spread:#9be564; --tough:#1fb89a; }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 16px; background: var(--bg); color: var(--text); font: 14px/1.4 system-ui, sans-serif; }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  .muted { color: var(--muted); }
+  .grid { display: grid; gap: 12px; margin-top: 12px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); }
+  figure, .chart { margin: 0; background: var(--panel); border-radius: 8px; padding: 8px; min-width: 0; }
+  video { width: 100%; display: block; border-radius: 4px; background: #000; }
+  figcaption { margin-top: 6px; color: var(--muted); }
+  .chart canvas { width: 100% !important; height: 220px !important; }
+</style>
+</head>
+<body>
+<h1 id="title">autolearn run</h1>
+<div class="muted" id="status">loading…</div>
+<div class="grid" id="clips"></div>
+<div class="grid" id="charts"></div>
+<script>
+const CHARTS = [
+  {title: "Population (mean alive per world)", keys: [["prey_alive", "prey", "--prey"], ["pred_alive", "predators", "--pred"]]},
+  {title: "Events per world-step", keys: [["catches_per_step", "catches", "--pred"], ["prey_births_per_step", "prey births", "--prey"], ["pred_births_per_step", "predator births", "--accent"]]},
+  {title: "Prey distance to nearest predator (cells)", keys: [["prey_pred_dist", "distance", "--prey"]]},
+  {title: "Predator distance to nearest predator (cells)", keys: [["pred_cluster_dist", "distance", "--pred"]]},
+  {title: "Reward per living agent-step", keys: [["prey_reward", "prey", "--prey"], ["pred_reward", "predators", "--pred"]]},
+  {title: "Policy entropy", keys: [["prey_entropy", "prey", "--prey"], ["pred_entropy", "predators", "--pred"]]},
+  {title: "Throughput (world-steps per second)", keys: [["sps", "steps/s", "--accent"]]},
+  // Evolution runs only; band = dashed lines at mean ± 1 std.
+  {title: "Prey genes (mean ± std)", band: true, keys: [["prey_speed", "speed", "--speed"], ["prey_sight", "sight", "--sight"], ["prey_breed", "breed", "--breed"], ["prey_size", "size", "--size"]]},
+  {title: "Predator genes (mean ± std)", band: true, keys: [["pred_speed", "speed", "--speed"], ["pred_sight", "sight", "--sight"], ["pred_breed", "breed", "--breed"], ["pred_size", "size", "--size"]]},
+  {title: "Plant genes (mean ± std)", band: true, keys: [["plant_spread", "spread", "--spread"], ["plant_tough", "toughness", "--tough"]]},
+  {title: "Plant cover (fraction of cells)", keys: [["plant_cover", "cover", "--accent"]]},
+  {title: "Generations (mean, living animals)", keys: [["prey_gen", "prey", "--prey"], ["pred_gen", "predators", "--pred"]]},
+  {title: "League: catches per predator-step, live brains vs past ones", needs: "league_count", keys: [["self_catch", "live vs live", "--accent"], ["league_prey_caught", "live predators vs past prey", "--pred"], ["league_pred_catch", "past predators vs live prey", "--prey"]]},
+  {title: "Prey in a burrow (share): predator near vs. none near", needs: "burrow_use_near", keys: [["burrow_use_near", "predator within 3 cells", "--pred"], ["burrow_use_far", "no predator near", "--prey"]]},
+];
+const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+const charts = {};
+
+function parseJsonl(text) {
+  const rows = [];
+  for (const line of text.split("\n")) {
+    if (!line.trim()) continue;
+    try { rows.push(JSON.parse(line)); } catch (e) { /* a line still being written */ }
+  }
+  return rows;
+}
+
+function chartDatasets(spec, rows) {
+  const out = [];
+  for (const [key, label, colour] of spec.keys) {
+    const line = {borderColor: css(colour), backgroundColor: css(colour), pointRadius: 0};
+    out.push({...line, label, borderWidth: 1.5, data: rows.map(r => ({x: r.env_steps, y: r[key]}))});
+    if (!spec.band) continue;
+    for (const sign of [1, -1]) {
+      out.push({...line, label: "", borderWidth: 1, borderDash: [4, 3],
+                data: rows.map(r => ({x: r.env_steps, y: r[key] + sign * (r[key + "_std"] ?? 0)}))});
+    }
+  }
+  return out;
+}
+
+function drawCharts(rows) {
+  const box = document.getElementById("charts");
+  const last = rows[rows.length - 1] || {};
+  for (const spec of CHARTS) {
+    if (!(spec.keys[0][0] in last)) continue;  // e.g. gene charts on a run without evolution
+    if (spec.needs && !rows.some(r => r[spec.needs] > 0)) continue;  // burrow chart only where burrows exist
+    const datasets = chartDatasets(spec, rows);
+    if (charts[spec.title]) {
+      charts[spec.title].data.datasets = datasets;
+      charts[spec.title].update();
+      continue;
+    }
+    const div = document.createElement("div");
+    div.className = "chart";
+    const title = document.createElement("div");
+    title.className = "muted";
+    title.textContent = spec.title;
+    const canvas = document.createElement("canvas");
+    div.append(title, canvas);
+    box.appendChild(div);
+    charts[spec.title] = new Chart(canvas, {
+      type: "line",
+      data: {datasets},
+      options: {
+        animation: false, parsing: false, maintainAspectRatio: false,
+        scales: {
+          x: {type: "linear", title: {display: true, text: "world-steps", color: css("--muted")}, ticks: {color: css("--muted")}},
+          y: {ticks: {color: css("--muted")}},
+        },
+        plugins: {legend: {labels: {color: css("--text"), filter: item => item.text !== ""}}},
+      },
+    });
+  }
+}
+
+function drawClips(clips) {
+  const box = document.getElementById("clips");
+  const pick = clips.filter(c => c.update === 0).concat(clips.filter(c => c.update > 0).slice(-3).reverse());
+  const key = pick.map(c => c.file).join("|");
+  if (box.dataset.key === key) return;
+  box.dataset.key = key;
+  box.replaceChildren();
+  for (const c of pick) {
+    const fig = document.createElement("figure");
+    const v = document.createElement("video");
+    Object.assign(v, {src: c.file, controls: true, muted: true, loop: true, playsInline: true, preload: "metadata"});
+    const cap = document.createElement("figcaption");
+    cap.textContent = `${c.label} · ${c.env_steps.toLocaleString()} world-steps · ${c.frames} frames`;
+    fig.append(v, cap);
+    box.appendChild(fig);
+  }
+}
+
+async function refresh() {
+  const status = document.getElementById("status");
+  try {
+    const [m, c] = await Promise.all([
+      fetch("metrics.jsonl", {cache: "no-store"}),
+      fetch("clips.json", {cache: "no-store"}),
+    ]);
+    const rows = m.ok ? parseJsonl(await m.text()) : [];
+    const clips = c.ok ? await c.json() : [];
+    drawClips(clips);
+    drawCharts(rows);
+    const last = rows[rows.length - 1];
+    status.textContent = last
+      ? `update ${last.update} · ${last.env_steps.toLocaleString()} world-steps · ${(last.wall_s / 3600).toFixed(2)} h · refreshed ${new Date().toLocaleTimeString()}`
+      : "waiting for the first update…";
+  } catch (e) {
+    status.textContent = "could not load run data: " + e;
+  }
+}
+
+document.getElementById("title").textContent =
+  "autolearn · " + (location.pathname.split("/").filter(Boolean).pop() || "run");
+refresh();
+setInterval(refresh, 30000);
+</script>
+</body>
+</html>

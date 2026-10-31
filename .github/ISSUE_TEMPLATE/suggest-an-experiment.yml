@@ -1,0 +1,36 @@
+name: Suggest an experiment
+description: An idea for a new pressure, world or test for the animals
+title: "Idea: "
+labels: ["suggestion"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks! You don't need to know any code. Past viewer ideas are listed in
+        [SUGGESTIONS.md](https://github.com/alltomstales-dotcom/how-i-grew-ai-brains/blob/main/SUGGESTIONS.md),
+        and hunters that hide came from a comment on Part 1.
+  - type: textarea
+    id: idea
+    attributes:
+      label: What should change in the world?
+      description: One change is best. What would the animals face that they don't face now?
+      placeholder: "Example: moving costs energy, and a quarter of the map is thickets that hide whoever is inside."
+    validations:
+      required: true
+  - type: textarea
+    id: expect
+    attributes:
+      label: What do you think would happen?
+      description: Your guess is useful even if it turns out wrong.
+    validations:
+      required: true
+  - type: textarea
+    id: test
+    attributes:
+      label: How could we tell if it worked? (optional)
+      description: Every stage has a test that can fail, fixed before any training run. If you can think of a measurement that would prove you wrong, add it here.
+  - type: input
+    id: credit
+    attributes:
+      label: How should we credit you? (optional)
+      description: A YouTube or GitHub handle. Leave this blank and we'll list you as "a viewer".

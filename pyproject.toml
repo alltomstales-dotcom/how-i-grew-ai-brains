@@ -1,0 +1,24 @@
+[project]
+name = "autolearn"
+version = "0.1.0"
+description = "Predator-prey Crucible: emergent behaviour from pure RL in JAX"
+requires-python = ">=3.11"
+dependencies = [
+    "jax>=0.7",
+    "flax>=0.10",
+    "optax>=0.2",
+    "numpy>=1.26",
+    "pillow>=10",
+    "imageio>=2.34",
+    "imageio-ffmpeg>=0.5",
+]
+
+[dependency-groups]
+dev = ["pytest>=8"]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

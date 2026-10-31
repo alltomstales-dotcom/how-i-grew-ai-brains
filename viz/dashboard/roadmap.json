@@ -1,0 +1,212 @@
+{
+ "title": "autolearn — growing intelligence in simulated worlds",
+ "updated": "2026-10-30",
+ "summary": "Animals learn by trial and error (reinforcement learning) and their bodies evolve, in worlds that run entirely on a DGX Spark's GPU. Nobody programs hunting, fleeing or foraging. We set the rules of the world and the goal (stay alive, have offspring), then watch what emerges.",
+ "explainer": [
+  "Inspiration: David Silver and Lasse Espeholt's 'Crucible' idea. Instead of learning from human data, agents learn from experience in a simulated world, so they can, in principle, keep improving without limit.",
+  "Brains: each species has one neural network, trained with PPO, a reinforcement-learning method. Every animal of that species uses it, and it sees a 9×9 patch of the world around the animal.",
+  "Bodies: in the evolution world, each animal inherits speed, sight range and breeding threshold from its parent, with small mutations, and each trait costs energy. Plants inherit spread rate and toughness. Natural selection, meaning who survives to breed, decides which genes spread.",
+  "Speed: the world, the brains and the learning are all compiled together in JAX. 1,024 worlds run in parallel on one GPU, at about 5,200 world-steps per second while learning and about 19,000 without it.",
+  "Honesty: every stage has a test that can fail. Each test compares against controls, such as random brains, founder bodies or one gene changed at a time, so a pass means something."
+ ],
+ "now": "Stage 6c passes on two seeds: in the flank world, learned predators catch 3.0-3.8 times as often as lone chasers, the clearest sign of intelligence so far. Stage 7a (brain size as a gene) is closed as a FAIL with a finding: the brain an animal keeps follows how much it eats, not how much thinking pays. Next under discussion: a fixed benchmark that scores every new brain on the same tests, and one brain carried forward across stages.",
+ "stages": [
+  {
+   "id": 1,
+   "name": "Predators and prey learn",
+   "status": "done",
+   "goal": "Two species learn to hunt and to evade from scratch, with no human data.",
+   "built": [
+    "48×48 world that wraps at the edges, with grass, prey and predators, written in pure JAX",
+    "Two-species PPO trainer: 512 worlds, about 3,700 steps/s on the GB10",
+    "Video clips, this dashboard, and an evaluation against random baselines",
+    "46 tests, plus a final code review"
+   ],
+   "remaining": [],
+   "coming": [],
+   "result": "pp-001: predators catch 3.36× as often as random predators, and prey live 1.61× as long as random prey (both pass). It then stalled: prey dodge almost every attack, and predators starve within about 30 steps."
+  },
+  {
+   "id": 2,
+   "name": "Bodies and plants evolve",
+   "status": "done",
+   "goal": "Heritable traits with energy costs, so evolution and learning shape each other.",
+   "built": [
+    "Inherited genes with mutation: speed, sight and breeding for animals; spread and toughness for plants",
+    "Lineages continue across worlds, because each reset draws its founders from survivors in every world",
+    "Evolved-versus-founder test, with one gene changed at a time; 'none survived' is reported rather than a fake 0",
+    "Control runs whose brains never learn, run side by side with the learning run",
+    "Fixes after pp-evo-001: every plant can die, every breeding gene is fertile, predators idle cheaply and a catch is a bigger meal"
+   ],
+   "remaining": [],
+   "coming": [
+    "Bitten plants need time to regrow, so tough plants stop being an endless food source"
+   ],
+   "result": "pp-evo-002 (learning brains) against pp-evo-002-ctl (brains that never learn), compared at the same 4.4M world-steps: learning changes what evolution selects. Prey and predators keep their sight (0.29 and 0.28 against 0.07 with random brains), and predators keep their speed (0.25 against 0.09), because only a brain that uses a costly trait makes it pay. Plants evolve grazing resistance only under learned foragers: toughness 0.99 against 0.11. Predators now breed in both runs. Still a loophole: a tough plant survives every bite, so trained prey eat endlessly, fill the 96 slots and breed as early as they can (breed 0.08). Earlier, pp-evo-001 (16 min) had evolved immortal plants and infertile predators; those rules were fixed first."
+  },
+  {
+   "id": 3,
+   "name": "Terrain, portable brains, and a league",
+   "status": "done",
+   "goal": "Brains carry from world to world, train against past opponents, and face terrain that ends the stalemate.",
+   "built": [
+    "Terrain world: wall segments and burrows that only prey can enter (and that hold no food), redrawn at every reset",
+    "Fixed 10-channel view (terrain last), so a saved brain loads into any of these worlds; older brains get zero weights for the new channels and act exactly as before",
+    "--init-from: start a run from another run's brains",
+    "Burrow test: trained prey must hide when a predator is near, selectively, 1.5x as much as random prey",
+    "Learning 2x faster: PPO learns from living animals first instead of every empty slot",
+    "Elo ratings across a run's saved brains (scripts/league.py), shown on the home page",
+    "Training against a league of frozen past brains (--league N), with live-vs-past catch rates on the run page",
+    "--set FIELD=VALUE to change a world setting for one run"
+   ],
+   "remaining": [],
+   "coming": [
+    "Distillation for changes to the network's shape"
+   ],
+   "result": "pp-terrain-001 (fresh brains) and pp-terrain-002 (pp-evo-002's brains carried over), 15 min each: carried-over brains started far ahead (72 prey per world at update 1 against 28), so learning does persist into a new world. Walls helped predators: fresh terrain predators caught 3-4x as often as in the open world. The burrow test failed in both: prey were in burrows 0.6% of the time whether or not a predator was near, the same as chance. Elo across checkpoints: prey improved in pp-evo-002 (+225) and pp-terrain-001 (+133), but predators did not (pp-evo-002: 830 down to 752). Follow-ups, 30 min each: pp-terrain-003 (64 burrows, pp-terrain-001's brains) failed the burrow test again: trained prey sat in burrows 2.2% of the time with a predator near and 2.1% without (ratio 1.05; random prey 1.20). pp-evo-004-league (a quarter of worlds against past brains) passed both evolution tests (evolved prey 0.63, predators 1.00 share against founders) but did not fix the predators: re-rated with the bodies each brain trained with, predator Elo never reached the +100 bar (pp-evo-002 +77, pp-evo-003 -7, pp-evo-004-league +33, pp-terrain-001 +24, pp-terrain-003 -11), while prey gained +200 to +280 everywhere except pp-terrain-003 (+61). pp-001, with no evolution at all, shows the same: predators 448 to 408, prey +247. Verdict: carrying brains over works; the league does not stop the predators stalling; burrow use did not emerge. Predator stall, answered: predators plateau even against prey that never learn (pp-pred-solo, Elo +52), and in the evo world they catch as well as a hand-written chase rule or better (the chaser does 0.83-1.06x as well). Against trained prey on an equal-speed map that wraps, neither catches anything. It is a ceiling, not a learning failure: predators need ambush, a speed edge or group hunting (Stage 6)."
+  },
+  {
+   "id": 4,
+   "name": "Memory",
+   "status": "done",
+   "goal": "Worlds that reward remembering: seasons, day and night, food that moves.",
+   "built": [
+    "Seasons world: night cuts every animal's sight to its neighbours, and plants take turns growing on the two halves of the map",
+    "Recurrent brains (--memory H): a GRU core whose state each animal carries from step to step and loses when it dies",
+    "Recurrent PPO: minibatches of whole animal histories, replayed from the stored starting memory",
+    "scripts/compare.py: the memory brain against the feed-forward one at matched world-steps (the memory brain runs slower)"
+   ],
+   "remaining": [],
+   "coming": [
+    "A world where memory is the only way to do well: food that is gone until it returns, predators that hide at dusk",
+    "State-space brains (S5)"
+   ],
+   "result": "FAIL, with the memory fix, 60 minutes each (pp-mem-003 against pp-mem-ff3, 768 worlds, evolution off). At matched world-steps (3.3M to 5.0M, 8 and 7 checkpoints): memory prey lived 0.99x as long and memory predators caught 1.13x as often (target 1.2x). The training curves show memory predators learning faster per world-step (0.214 catches per step against 0.177 at 4.7M steps); the feed-forward predators reach the same level by about 7.6M steps. The memory brain runs at 62% of the speed, so against the clock the two are level. Prey sit at about 47 per world either way, capped by space and food, so the seasons world gives prey nothing that memory can win. (An earlier 30-minute pair was void: newborns inherited a dead animal's memory, a bug found in review.)"
+  },
+  {
+   "id": 5,
+   "name": "A richer ecology",
+   "status": "running",
+   "goal": "A 3–4 level food web, bigger maps, new body traits, and two-parent reproduction.",
+   "built": [
+    "Size gene for every animal: big grazers digest tough plants, only small prey fit into burrows, predators only catch prey up to their own size plus a margin, and size costs energy",
+    "Sexual breeding: an animal ready to breed needs a mate within 2 cells, and the child takes each gene from one parent or the other",
+    "Niches world: terrain plus size and mating",
+    "scripts/species.py: finds two groups in each gene snapshot and scores how cleanly they separate (Ashman's D)",
+    "v2 rules after pp-niche-001: a catch succeeds with a chance that falls smoothly with how much bigger the prey is (no prey is immune), a catch feeds by the prey's size, and mates must be within 0.2 in size",
+    "v3 rules: two fixed plant kinds (soft grass and tough shrubs), and size affects only feeding",
+    "v4 rules: small grazers digest grass best and big ones shrubs, so the middle size is second best at both",
+    "v5 rules: a bite never kills a plant, seeding ignores toughness and new plants sprout as fresh grass or shrubs, so both foods last"
+   ],
+   "remaining": [
+    "Stage 5b: a food web (mid-predators, scavengers) and bigger maps"
+   ],
+   "coming": [
+    "A food web: mid-predators and scavengers (Stage 5b)",
+    "Maps of 128-256 cells, sharded across the GB10",
+    "Armour and camouflage genes"
+   ],
+   "result": "v1, 30 minutes each (768 worlds; 1,024 ran out of memory inside its cap): FAIL in both, through a loophole. Prey grew big (0.81 with mating, 0.88 without), predators shrank to 0.12 and 0.06, and catches fell from 0.07 to 0.001 per step: under a hard size cut-off, big prey were simply immune, and a predator gained nothing by growing. Predators survived only because a world where they die out resets with fresh founders. Prey sizes split briefly early on (gap 0.33-0.35 around updates 30-45 with mating) and merged again. Mating made no difference to the outcome. v2 (no immune prey, meals by size, size-matched mating), 30 minutes each: FAIL again, the same way. Prey grew to 0.86 and 0.89, predators shrank to 0.03 and 0.06, and catches fell to zero. Every pressure pushed prey the same way: plants evolve to toughness 0.99, which big grazers digest best, and big prey are safe. The small-prey niche relied on burrows, which learned prey never use. Once catches are rare, predators shrink to save upkeep, and world resets keep them alive. Mating changed nothing. Next, v3: two fixed plant kinds (soft grass and tough shrubs), and size affects only feeding, so competition for food can split prey. v3, 30 minutes each: FAIL. Prey grew big again (0.90 and 0.89) and predators small. The size spread reached D 2.0 with a minority of 0.38, but the size gap was only 0.13, one wide group rather than two. Mating made no difference, though it slowed predators to 16 generations against 78 without it. The cause: grass fed every size fully, so being big never cost anything at the trough; only upkeep favoured small bodies. Next, v4: small grazers digest grass best. v4, 30 minutes each: FAIL (prey 0.90 and 0.89, size gap 0.12). The logged plant toughness explains v3 and v4: it reached 1.0 everywhere within about 20 updates. The grass had died out, killed by every bite and replaced by seedlings from the surviving shrubs, so there were never two foods to compete for. v5 keeps both kinds. v5, 30 minutes each: FAIL, but the first real divergence. Both foods survived. With mating, prey moved as one group toward small bodies (0.14). Without mating, two even groups pulled apart steadily (size gap 0.22, then 0.25, then 0.30 at the end; D 1.8, under the bar of 2), still widening at the time cap. Sexual mixing seems to hold the population together. v6, 60 minutes each: FAIL, a near miss. Without mating (new seed), two evenly shared size groups held 0.35-0.40 apart for the last 25 minutes, with D 1.92-2.09; one of the last three snapshots had D 1.95 against the bar of 2. With strict size matching for mates, prey shrank together. Finding: competition for two foods holds two body sizes apart when lineages breed alone, and two-parent breeding prevents it. The bar is not moved after the fact."
+  },
+  {
+   "id": 6,
+   "name": "Social intelligence",
+   "status": "running",
+   "goal": "Signalling, kin recognition and cooperative hunting.",
+   "built": [
+    "Pack world: a prey is eaten only when two predators within one cell hunt it together, and they share the meal; a lone predator catches nothing",
+    "scripts/chase.py: compares learned predators with hand-written chasers that each run alone to the nearest prey",
+    "Signals world: the pack world, where each move can be made with a signal on (0.05 energy); animals see their own species' signals from the last step",
+    "scripts/signals.py: how often each species signals, how much a signal says about the other species within 2 cells (mutual information), and how many catches predators lose when they cannot see signals",
+    "Flank world: a prey is eaten only when its hunters stand on opposite sides of it (east and west, or north and south), which two chasers coming up behind it never do",
+    "chase.py --evolved: the same comparison in the run's evolved bodies",
+    "Shuffled-signal control in signals.py: predators hear another world's signals, which keeps the signal statistics and removes the link to their own packmates"
+   ],
+   "remaining": [],
+   "coming": [
+    "Prey that only a group can catch and a lone chaser cannot (bigger prey, or prey that must be cornered), so coordination beyond 'go to the nearest prey' pays",
+    "Kin recognition"
+   ],
+   "result": "6a, 30 minutes each: FAIL. Catches per step rose from about 0.1 to 0.7 and predators kept close together, but against trained prey learned predators caught 1.02-1.04 times as often as lone chasers (bar: 1.5). The rise came from bodies: predators evolved speed 0.66 (founders 0.2) and prey slowed to 0.14. Lone chasers converge on the same nearest prey, so pairs form without coordination. 6b, 30 minutes each: FAIL. Predators signalled 37-38% of the time, but the signal carried 0.01-0.03 bits about nearby prey, and blanking it changed catches by -0.1% and -0.7% (bar: a 10% drop). Prey signals carried nothing. With nothing to coordinate, a signal has no job. In evolved bodies both kinds of predator catch 2.3 times as often, and chasers still match learned brains (0.97-0.98x): bodies made the difference, not brains. A later code review found that signals were heard only within the listener's sight, so they could say little that sight did not; this weakens the 6b result. Signals are now heard across the whole view, and the flank-with-signals run is the fair test. 6c, seed 0, 30 minutes each: PASS. Against trained prey, learned predators catch 3.8 times (founder bodies) and 3.2 times (evolved bodies) as often as lone chasers; with signals 3.7 and 3.7 times. Blanking signals costs 33% (founder) and 17% (evolved) of catches, though a signal says almost nothing about nearby prey (0.003 bits): it seems to act as a beacon. Seed 1: PASS again, 3.3 and 3.7 times without signals, 3.0 and 3.7 with them, so 6c is a result on two seeds. Shuffled control: hearing another world's signals costs 25-28% of catches, as much as silence, so listeners use what their own packmates signal. But on seed 1 signals mattered only in evolved bodies (drop 22%), not in founder bodies (+5%), so the signal finding is firm for the run's own animals and weaker in general."
+  },
+  {
+   "id": 7,
+   "name": "Brains evolve too",
+   "status": "running",
+   "goal": "Brain size and learning settings become genes, plus learning within a single lifetime.",
+   "built": [
+    "Brain gene for every animal: an animal uses only the first 8 + 120g of its species' 128 hidden units and pays 0.5g energy per step, so evolution has to pay for thinking",
+    "pack_brains and flank_brains worlds: the same evolving brain size where learning adds nothing (pack) and where it beats a simple chase almost fourfold (flank)",
+    "Spread founders: the brain gene starts anywhere in [0, 1], so every width of the brain is trained before selection",
+    "7b brain tax: an animal with brain gene g keeps 1 - tax * g of every meal, so rich and poor pay the same share for the same brain (pack_tax and flank_tax worlds, tax 0.3; spec 2026-10-29-brain-tax-design.md)",
+    "7c fickle world: one plant kind feeds and the other poisons, hidden and flipping at random, so only tasting and remembering works; scripts.lifetime compares memory brains with feed-forward ones"
+   ],
+   "remaining": [],
+   "coming": [
+    "Population-based training of learning settings",
+    "Test: evolved learners adapt to change within one life"
+   ],
+   "result": "7a, first pair (narrow founders), 30 minutes each: every brain shrank to the floor, predators to 0.06 (flank) and 0.09 (pack), prey to 0.07. A code review explained it: a part of the brain that no animal uses never trains, so a mutant with a bigger brain got untrained units and a bigger energy bill. The test could only measure how fast brains shrink. Kept as a reference; v2 fixes the start. v2 (spread founders), 30 minutes each: FAIL. At cost 0.5, predator brains ended at 0.06 (flank) and 0.12 (pack); with no cost, 0.79 and 0.78, and prey brains grew to 0.70-0.75 too. Brains help, but at 0.5 they never pay, so there is no middle ground in which a difference between worlds could show. The richer pack predators (15 times the catches) kept more brain, speed and sight. Flank predators with about 15 hidden units still beat chasers 2.4 times. v3 (cost 0.1): FAIL the opposite way. Predator brains settled at 0.19 in flank and 0.50 in pack (cost-free gap +0.02). Pack brains rose only after evolved speed and sight made pack predators rich (catches 0.1 to 0.7 per step). Finding: brain size follows food, not the value of thinking; flanking fits in about 20-25 hidden units. 7a closed without further tuning. 7b (brain tax, seed 0): PASS. With the brain charged as a share of every meal, predator brains ended at 0.53 (flank) against 0.18 (pack) at tax 0.3, and 0.69 against 0.38 at tax 0.1 (bar: flank 0.12 higher). This reverses 7a: with a fair cost, evolution buys brain where thinking pays. Pack brains fell only after pack predators evolved speed and sight. Seed 1 at tax 0.3 held: 0.47 against 0.14. 7b closed. 7c (learning within one lifetime): PASS on two seeds. In a world where one plant kind feeds and the other poisons, hidden and flipping at random, memory brains took 85% and 76% good bites 10-40 steps after a flip, against 64% with no memory; with the memory wiped they fell to 66% and 60%. After a bad bite, the same animal's next bite was good 67% and 55% of the time, against 50% with no memory. No-memory brains also recover, later, so memory's gift is speed."
+  },
+  {
+   "id": 8,
+   "name": "Toward realism",
+   "status": "running",
+   "goal": "Continuous physics (Brax or MuJoCo MJX in JAX), with the grid strategy directing a learned movement layer.",
+   "built": [
+    "3-D replay viewer (world3d.html, three.js): real trained animals, plants and catches from scripts.episode3d, with a visual-only hills preview of a heightfield world",
+    "8a hills: fixed height map; climbing costs energy, high ground sees further, hills hide what is behind them; a relative-height channel; hills and flank_hills worlds; scripts.hills blanks the height channel to test whether animals use terrain",
+    "8b ambush, from a viewer's comment: moving costs energy and thickets hide whoever is inside; scripts.ambush tests whether hunters wait in cover and whether hiding pays"
+   ],
+   "remaining": [],
+   "coming": [
+    "8a v2: measure the high-ground habit directly, or compare with a flat-world brain, bar set first",
+    "Test: the transferred strategy beats one learned from scratch"
+   ],
+   "result": "8a hills: FAIL. Without the height channel predators catch 4.8% (hills) and -5.4% (flank_hills) less and prey live 2% less long (bar 10%). But trained predators spend 78% of their time on high ground against 64% at random in plain hills, and only 56% in flank_hills, so terrain shapes behaviour even though the slope channel adds little to catching. Hills cut flanking's edge over a chaser from 3-3.8x to 2.3x. 8b ambush, from a viewer's comment: PASS on two seeds. With walking costing energy and thickets hiding whoever is inside, hunters spent 64-65% of their time in thickets (map 25%), stood still 90-93% of the time (random 20%), and caught 68-72% less when thickets stopped hiding them. A one-line chaser still catches more but burns two thirds more energy per step, so per meal they are about even."
+  },
+  {
+   "id": 9,
+   "name": "Open-ended worlds and scale",
+   "status": "planned",
+   "goal": "World generators that co-evolve with the agents, and scaling across more Spark nodes.",
+   "built": [],
+   "remaining": [],
+   "coming": [
+    "POET- and PAIRED-style generators",
+    "Separate acting from learning (IMPALA or SEED RL)",
+    "More Sparks, if available"
+   ],
+   "result": null
+  }
+ ],
+ "lessons": [
+  "Pressure is what grows intelligence. Equal bodies on an open grid led to a stalemate within 6 minutes.",
+  "Selection takes whatever is free. Every trait needs a real cost.",
+  "Tests can pass for the wrong reason. Always include controls: random brains, founder bodies, one gene changed at a time.",
+  "Learning steers evolution: a costly trait such as sight or speed survives only when the brain can use it (the control's random brains let it decay).",
+  "One-sided arms races: once prey dodge well, predators stop improving and even get worse against every prey generation. Elo over saved brains makes this visible; the pass/fail tests did not.",
+  "Selection exploits every loophole in the rules: immortal plants, infertile but long-lived predators. Read the genes, not just the pass/fail.",
+  "Know where the compute goes. 75% of the learning batch was empty animal slots; sampling living ones first doubled the speed.",
+  "Measure the thing you claim. 'Faster with 1,024 worlds' was true only for runs that do not learn.",
+  "Two runs at once share one GPU: each gets about half the speed. Running them side by side is for fair comparison, not for more throughput.",
+  "A finding that survives a control is worth more than one that doesn't: the predator stall shows up with and without evolution, and with and without a league, so it is not caused by any of them.",
+  "Test the measuring stick on a run where the answer must be no. The first species-split measure said 'split' after four generations.",
+  "A change for one world can land in all of them: the size channel added for the niches world also widened the seasons world's view, and the memory run that fitted at 1,024 worlds stopped fitting. Re-check memory after any change to what the brains see.",
+  "Have a fresh reviewer read the code before trusting a near miss: the memory test's 1.16x came from a brain that gave newborns a dead animal's memory, a bug that hurt only the side under test.",
+  "A rule that sounds like it needs teamwork may not. Two predators chasing the nearest prey meet there anyway, so 'two must hunt together' did not reward coordination beyond a simple chase.",
+  "Check that the conditions a test depends on actually hold during the run. Two runs of the species-split test had only one food, and the plant log showed it from the first minutes.",
+  "Get a fresh reviewer before trusting a new rule. A review caught a flank rule four times looser than intended and a signal that could only reach animals already in sight, before either produced a result anyone relied on.",
+  "Coordination is learned only when the simple rule fails. Two predators that merely must be adjacent learned nothing a lone chaser does not do; predators that must stand exactly opposite learned to outdo chasers almost fourfold."
+ ],
+ "links": [
+  {
+   "label": "Code",
+   "href": "https://github.com/alltomstales-dotcom/how-i-grew-ai-brains"
+  },
+  {
+   "label": "Full roadmap (docs/roadmap.md)",
+   "href": "https://github.com/alltomstales-dotcom/how-i-grew-ai-brains/blob/main/docs/roadmap.md"
+  }
+ ]
+}
