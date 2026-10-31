@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Three continents</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html,body{margin:0;height:100%;background:#0d1117;color:#e6edf3;font:14px system-ui,sans-serif;overflow:hidden}
+  #panes{display:flex;height:calc(100% - 52px)}
+  .pane{flex:1;position:relative;border-right:2px solid #000;min-width:0}
+  .pane iframe{width:100%;height:100%;border:0;display:block}
+  .pane h2{position:absolute;left:10px;top:6px;margin:0;font-size:16px;text-shadow:0 1px 3px #000;pointer-events:none}
+  .pane p{position:absolute;left:10px;bottom:6px;margin:0;font-size:12px;opacity:.85;text-shadow:0 1px 3px #000;pointer-events:none}
+  #bar{height:52px;display:flex;align-items:center;gap:10px;padding:0 12px;box-sizing:border-box;background:#161b22}
+  #bar input{flex:1}
+  button,select{font:inherit;color:#e6edf3;background:#21262d;border:1px solid #30363d;border-radius:6px;padding:4px 10px}
+</style></head><body>
+<div id="panes"></div>
+<div id="bar"><button id="play">&#9654;</button><select id="speed"><option>2</option><option>4</option><option selected>8</option><option>16</option></select>
+<input id="scrub" type="range" min="0" max="0" value="0"><span id="step"></span></div>
+<script>
+// Three replays side by side, one step for all: tri.html?runs=a,b,c&labels=Meadow,Forest,Tundra
+const q = new URLSearchParams(location.search), $ = (i) => document.getElementById(i);
+const runs = (q.get("runs") || "").split(",").filter(Boolean), labels = (q.get("labels") || "Meadow,Forest,Tundra").split(",");
+const panes = new Map(); let t = 0, T = 0, playing = false, last = performance.now(), acc = 0;
+runs.forEach((run, k) => {
+  const d = document.createElement("div"); d.className = "pane";
+  d.innerHTML = `<iframe src="${q.get("viewer") || "index.html"}?run=${encodeURIComponent(run)}&bare=1" title="${labels[k] || run}"></iframe><h2>${labels[k] || run}</h2><p></p>`;
+  $("panes").append(d); panes.set(run, d);
+});
+addEventListener("message", (e) => {
+  if (!e.data || e.data.type !== "pane") return;
+  T = Math.max(T, e.data.T); $("scrub").max = T - 1;
+  const d = panes.get(e.data.run); if (d) d.querySelector("p").textContent = e.data.stats;
+});
+function send() { for (const d of panes.values()) d.querySelector("iframe").contentWindow.postMessage({ type: "step", t }, "*"); $("scrub").value = t; $("step").textContent = `step ${t + 1}${T ? " of " + T : ""}`; }
+$("scrub").oninput = (e) => { t = +e.target.value; send(); };
+$("play").onclick = () => { playing = !playing; $("play").textContent = playing ? "\u275A\u275A" : "\u25B6"; };
+function tick(now) {
+  requestAnimationFrame(tick);
+  if (playing) { acc += (now - last) / 1000 * +$("speed").value; while (acc >= 1) { acc -= 1; if (T && t >= T - 1) { playing = false; $("play").textContent = "\u25B6"; break; } t++; send(); } }
+  last = now;
+}
+requestAnimationFrame(tick);
+setInterval(() => { if (!playing) send(); }, 1000);  // panes load at their own pace; keep them in step until then
+</script></body></html>

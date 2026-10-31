@@ -61,24 +61,70 @@
   </select></label>
   <button id="hills" title="Visual preview of a Stage 8 heightfield. The agents in this run were trained on a flat grid and do not feel height.">hills (preview)</button>
   <button id="trails">trails</button>
+<<<<<<< public
+<<<<<<< public
+<<<<<<< public
   <a id="home" href="./">dashboard</a>
+=======
+=======
+>>>>>>> new private
+=======
+>>>>>>> new private
+  <button id="randomLife" title="Live one animal's whole life, from birth to death, through its own senses">live a random life</button>
+  <button id="eyes" disabled title="Click an animal first, or press E">through its eyes</button>
+  <a href="./">dashboard</a>
+>>>>>>> new private
 </div>
 
 <div id="legend" class="panel">
-  <div><span class="sw" style="background:#f0f0f0"></span><b>prey</b>: sphere, brighter = faster</div>
-  <div><span class="sw" style="background:#e5484d"></span><b>predator</b>: cone, brighter = faster</div>
+  <div><span class="sw" style="background:#f0f0f0"></span><b>grazer</b>: round, brighter = faster</div>
+  <div><span class="sw" style="background:#e5484d"></span><b>hunter</b>: lean, pointed face, brighter = faster</div>
+  <div class="note">Bodies show each animal's genes: long legs = speed, big eyes = sight, bigger = size, fatter = more energy. Looks only.</div>
   <div><span class="sw" style="background:#3fb950"></span><b>grass</b>: taller and darker = tougher</div>
   <div><span class="sw" style="background:#ffb000"></span><b>catch</b>: gold ring where predators ate</div>
   <div id="legendCover" style="display:none"><span class="sw" style="background:#3f7f3a"></span><b>thicket</b>: hides whoever is inside, except from the next cell</div>
   <div id="scale" style="display:none;margin-top:6px"><div id="scaleName"></div>
     <div id="scaleBar" style="height:8px;border-radius:4px"></div>
     <div class="row note"><span id="scaleLo"></span><span id="scaleHi"></span></div></div>
-  <div class="note" style="margin-top:6px">Click an animal to follow it. Drag to orbit, scroll to zoom. Space plays and pauses; ← → step.
+  <div class="note" style="margin-top:6px">Click an animal to follow it, then E to see through its eyes. Drag to orbit, scroll to zoom. Space plays and pauses; ← → step.
   The world wraps at the edges (a torus).</div>
 </div>
 
 <div id="info" class="panel"></div>
 <div id="caption" class="panel"></div>
+
+<div id="pov" class="panel" style="display:none;position:fixed;right:12px;bottom:64px;width:230px;z-index:5">
+  <div id="povTitle" style="font-weight:600"></div>
+  <div class="row"><span>energy</span><span id="povEnergy"></span></div><div class="bar"><i id="povBar"></i></div>
+  <div class="row"><span>age</span><span id="povAge"></span></div>
+  <div class="row"><span id="povMealsName">meals</span><span id="povMeals"></span></div>
+  <canvas id="povGrid" width="198" height="198" style="display:block;margin:8px auto;background:#000"></canvas>
+  <div class="note">What its brain receives each step, rebuilt from the replay by the world's rules: green plant, white grazer, red hunter, yellow itself. Black is out of its sight.</div>
+  <div id="povEnd" style="margin-top:6px;color:#ffb000;font-weight:600"></div>
+  <button id="povExit" style="margin-top:6px">leave its eyes</button>
+</div>
+
+<div id="pov" class="panel" style="display:none;position:fixed;right:12px;bottom:64px;width:230px;z-index:5">
+  <div id="povTitle" style="font-weight:600"></div>
+  <div class="row"><span>energy</span><span id="povEnergy"></span></div><div class="bar"><i id="povBar"></i></div>
+  <div class="row"><span>age</span><span id="povAge"></span></div>
+  <div class="row"><span id="povMealsName">meals</span><span id="povMeals"></span></div>
+  <canvas id="povGrid" width="198" height="198" style="display:block;margin:8px auto;background:#000"></canvas>
+  <div class="note">What its brain receives each step, rebuilt from the replay by the world's rules: green plant, white grazer, red hunter, yellow itself. Black is out of its sight.</div>
+  <div id="povEnd" style="margin-top:6px;color:#ffb000;font-weight:600"></div>
+  <button id="povExit" style="margin-top:6px">leave its eyes</button>
+</div>
+
+<div id="pov" class="panel" style="display:none;position:fixed;right:12px;bottom:64px;width:230px;z-index:5">
+  <div id="povTitle" style="font-weight:600"></div>
+  <div class="row"><span>energy</span><span id="povEnergy"></span></div><div class="bar"><i id="povBar"></i></div>
+  <div class="row"><span>age</span><span id="povAge"></span></div>
+  <div class="row"><span id="povMealsName">meals</span><span id="povMeals"></span></div>
+  <canvas id="povGrid" width="198" height="198" style="display:block;margin:8px auto;background:#000"></canvas>
+  <div class="note">What its brain receives each step, rebuilt from the replay by the world's rules: green plant, white grazer, red hunter, yellow itself. Black is out of its sight.</div>
+  <div id="povEnd" style="margin-top:6px;color:#ffb000;font-weight:600"></div>
+  <button id="povExit" style="margin-top:6px">leave its eyes</button>
+</div>
 
 <div id="bottom" class="panel">
   <button id="play">▶</button>
@@ -114,6 +160,7 @@ function decode(data) {
 
 // ---------- scene ----------
 const CAPTURE = params.has("capture");  // recorder mode: no UI, frames drawn on demand through window.cap
+const BARE = params.has("bare");  // one pane of tri.html: no UI, and the parent page sets the step
 const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: CAPTURE });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.setSize(innerWidth, innerHeight);
@@ -182,11 +229,20 @@ function buildWorld() {
   grass.castShadow = true; grass.receiveShadow = true;
   scene.add(grass);
 
-  const ball = new THREE.SphereGeometry(0.36, 18, 12); ball.translate(0, 0.36, 0);
-  prey = new THREE.InstancedMesh(ball, new THREE.MeshStandardMaterial({ roughness: 0.45 }), 256);
-  const cone = new THREE.ConeGeometry(0.42, 1.1, 14); cone.rotateX(Math.PI / 2); cone.translate(0, 0.45, 0);
-  pred = new THREE.InstancedMesh(cone, new THREE.MeshStandardMaterial({ roughness: 0.35, metalness: 0.1 }), 128);
+  // Bodies are drawn from each animal's real genes: legs from speed, eyes from sight, bulk from size. They are looks only:
+  // what an animal can do is still set on the grid. Forward is +z.
+  const most = { prey: 16, pred: 16 };
+  for (const f of frames) for (const k of ["prey", "pred"]) most[k] = Math.max(most[k], f[k].size + 16);
+  const round = new THREE.SphereGeometry(1, 14, 10);
+  const preyBody = round.clone().scale(0.3, 0.25, 0.38), predBody = round.clone().scale(0.22, 0.2, 0.42);
+  prey = new THREE.InstancedMesh(preyBody, new THREE.MeshStandardMaterial({ roughness: 0.6 }), most.prey);
+  pred = new THREE.InstancedMesh(predBody, new THREE.MeshStandardMaterial({ roughness: 0.4, metalness: 0.1 }), most.pred);
   for (const m of [prey, pred]) { m.castShadow = true; m.frustumCulled = false; scene.add(m); m.userData.uids = []; }
+  for (const set of Object.values(bodyParts)) for (const p of set) if (p.mesh) { scene.remove(p.mesh); p.mesh.dispose(); }
+  for (const kind of ["prey", "pred"]) for (const p of bodyParts[kind]) {
+    p.mesh = new THREE.InstancedMesh(PART_SHAPES[p.shape], new THREE.MeshStandardMaterial({ roughness: 0.55, color: p.fixed ?? 0xffffff }), most[kind]);
+    p.mesh.frustumCulled = false; p.mesh.castShadow = !!p.shadow; scene.add(p.mesh);
+  }
 
   // Terrain (Stage 3 worlds): grey wall blocks, and dark burrow mouths only small prey can enter.
   if (ep && ep.terrain) {
@@ -234,13 +290,26 @@ function buildWorld() {
 }
 
 // ---------- per-step drawing ----------
-const SOIL = [62, 46, 31], GRASS = [70, 170, 80], SHRUB = [22, 82, 36];
+const CLIMATES = {
+  meadow: { soil: [62, 46, 31], grass: [70, 170, 80], shrub: [22, 82, 36], sky: 0x0d1117 },
+  forest: { soil: [28, 24, 18], grass: [34, 104, 58], shrub: [12, 52, 34], sky: 0x070b0a },
+  tundra: { soil: [104, 112, 122], grass: [142, 158, 110], shrub: [96, 112, 92], sky: 0x18202b },
+};
+const WINTER = { soil: [176, 186, 198], grass: [150, 168, 172], shrub: [116, 134, 142] };
+let SOIL = CLIMATES.meadow.soil, GRASS = CLIMATES.meadow.grass, SHRUB = CLIMATES.meadow.shrub;
+function setClimate(step) {  // the continent's colours; a winter world pales in winter
+  const c = CLIMATES[ep && ep.climate] || CLIMATES.meadow, cold = ep && ep.winter_len && Math.floor(step / ep.winter_len) % 2 === 1;
+  const p = cold ? WINTER : c;
+  SOIL = p.soil; GRASS = p.grass; SHRUB = p.shrub;
+  scene.background.set(c.sky); scene.fog.color.set(c.sky);
+}
 const tmp = new THREE.Object3D(), col = new THREE.Color();
 let groundStep = -1;
 
 function drawGround(t) {
   if (t === groundStep) return;
   groundStep = t;
+  setClimate(t);
   const f = frames[t];
   let n = 0;
   for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
@@ -268,6 +337,50 @@ const wrapd = (d) => ((d + N / 2) % N + N) % N - N / 2;
 const lerpWrap = (a, b, f) => { const d = wrapd(b - a); return (((a + d * f) % N) + N) % N; };
 const ease = (f) => f * f * (3 - 2 * f);
 
+const PART_SHAPES = {
+  ball: new THREE.SphereGeometry(1, 10, 8),
+  leg: new THREE.CylinderGeometry(1, 0.7, 1, 6).translate(0, -0.5, 0),  // hangs from its hip
+  cone: new THREE.ConeGeometry(1, 1, 7).translate(0, 0.5, 0),
+};
+// x, y above the hips, z; r = size; sight: scale with the sight gene; leg: swings; tilt: lean forward; fixed: its own colour.
+const bodyParts = {
+  prey: [
+    { shape: "ball", at: [0, 0.2, 0.42], r: [0.17, 0.16, 0.2], shadow: true },
+    { shape: "ball", at: [0, 0.14, 0.59], r: [0.1, 0.08, 0.09], fixed: 0xd9d2c5 },
+    { shape: "cone", at: [-0.12, 0.3, 0.36], r: [0.05, 0.17, 0.05], tilt: -0.5 }, { shape: "cone", at: [0.12, 0.3, 0.36], r: [0.05, 0.17, 0.05], tilt: -0.5 },
+    { shape: "ball", at: [-0.12, 0.25, 0.5], r: 0.05, sight: true, fixed: 0xffffff }, { shape: "ball", at: [0.12, 0.25, 0.5], r: 0.05, sight: true, fixed: 0xffffff },
+    { shape: "ball", at: [-0.125, 0.25, 0.54], r: 0.028, sight: true, fixed: 0x101010 }, { shape: "ball", at: [0.125, 0.25, 0.54], r: 0.028, sight: true, fixed: 0x101010 },
+    { shape: "leg", at: [-0.17, 0, 0.22], r: 0.045, leg: 0 }, { shape: "leg", at: [0.17, 0, 0.22], r: 0.045, leg: 1 },
+    { shape: "leg", at: [-0.17, 0, -0.22], r: 0.045, leg: 1 }, { shape: "leg", at: [0.17, 0, -0.22], r: 0.045, leg: 0 },
+    { shape: "ball", at: [0, 0.12, -0.38], r: 0.07 },
+  ],
+  pred: [
+    { shape: "ball", at: [0, 0.2, 0.46], r: [0.14, 0.13, 0.17], shadow: true },
+    { shape: "cone", at: [0, 0.16, 0.56], r: [0.08, 0.26, 0.07], tilt: 1.57, fixed: 0x5a1414 },
+    { shape: "cone", at: [-0.09, 0.3, 0.42], r: [0.05, 0.15, 0.03], tilt: -0.1 }, { shape: "cone", at: [0.09, 0.3, 0.42], r: [0.05, 0.15, 0.03], tilt: -0.1 },
+    { shape: "ball", at: [-0.075, 0.25, 0.58], r: 0.04, sight: true, fixed: 0xffd24a }, { shape: "ball", at: [0.075, 0.25, 0.58], r: 0.04, sight: true, fixed: 0xffd24a },
+    { shape: "ball", at: [-0.075, 0.25, 0.61], r: 0.018, sight: true, fixed: 0x101010 }, { shape: "ball", at: [0.075, 0.25, 0.61], r: 0.018, sight: true, fixed: 0x101010 },
+    { shape: "leg", at: [-0.13, 0.02, 0.26], r: 0.04, leg: 0 }, { shape: "leg", at: [0.13, 0.02, 0.26], r: 0.04, leg: 1 },
+    { shape: "leg", at: [-0.13, 0.02, -0.26], r: 0.04, leg: 1 }, { shape: "leg", at: [0.13, 0.02, -0.26], r: 0.04, leg: 0 },
+    { shape: "cone", at: [0, 0.1, -0.38], r: [0.035, 0.5, 0.035], tilt: -2.2 },
+  ],
+};
+const animM = new THREE.Matrix4(), partM = new THREE.Matrix4(), _p = new THREE.Vector3(), _q = new THREE.Quaternion(), _s = new THREE.Vector3(), _e = new THREE.Euler();
+function placeBody(kind, n, a, base, swing) {
+  const legLen = 0.2 + 0.32 * a.speed;  // long legs for a fast animal
+  const eye = 0.75 + 1.1 * a.sight;     // big eyes for one that sees far
+  for (const p of bodyParts[kind]) {
+    const r = Array.isArray(p.r) ? p.r : [p.r, p.r, p.r];
+    let tilt = p.tilt || 0, sy = r[1], k = 1;
+    if (p.sight) k = eye;
+    if (p.leg !== undefined) { tilt = (p.leg ? -1 : 1) * swing; sy = legLen; }
+    _p.set(p.at[0], legLen + p.at[1], p.at[2]); _e.set(tilt, 0, 0); _q.setFromEuler(_e); _s.set(r[0] * k, sy * k, r[2] * k);
+    partM.compose(_p, _q, _s).premultiply(base);
+    p.mesh.setMatrixAt(n, partM);
+    if (!p.fixed) p.mesh.setColorAt(n, col);
+  }
+}
+
 function colourFor(a, e, kind) {
   const mode = $("colour").value;
   if (mode === "brain") return col.setHSL(0.75 - 0.6 * a.brain, 0.85, 0.35 + 0.3 * a.brain);
@@ -281,33 +394,48 @@ function drawAnimals(kind, mesh, t, f) {
   const now = frames[t][kind], next = frames[Math.min(t + 1, T - 1)][kind];
   const uids = mesh.userData.uids; uids.length = 0;
   let n = 0;
+  let moving = 0;
   const place = (uid, x, y, e, s, yaw) => {
     const a = ep.animals[uid];
+    if (pov != null) {  // through its eyes: itself is not drawn, and neither is anything its senses miss
+      if (uid === pov) return;
+      const me = frames[t][ep.animals[pov].kind].get(pov) || povLast;
+      if (me) {
+        if (!senses(me, x, y, kind)) return;
+        x = me[0] + wrapd(x - me[0]); y = me[1] + wrapd(y - me[1]);  // the world wraps, so show the near copy
+      }
+    }
     const scale = s * (0.8 + 0.5 * a.size);
-    const hop = kind === "prey" ? Math.abs(Math.sin(Math.PI * f)) * 0.25 * (s > 0.99 ? 1 : 0) : 0;
-    tmp.position.set(x + 0.5, height(x, y) + hop, y + 0.5);
+    const legLen = 0.2 + 0.32 * a.speed;
+    tmp.position.set(x + 0.5, height(x, y), y + 0.5);
     tmp.rotation.set(0, yaw, 0);
-    tmp.scale.setScalar(Math.max(scale, 0.001));
+    tmp.scale.set(Math.max(scale, 0.001) * (0.85 + 0.35 * Math.min(e / (kind === "prey" ? 40 : 60), 1)), Math.max(scale, 0.001), Math.max(scale, 0.001));  // fatter when full
     tmp.updateMatrix();
-    mesh.setMatrixAt(n, tmp.matrix);
+    animM.copy(tmp.matrix);
+    partM.makeTranslation(0, legLen + 0.12, 0).premultiply(animM);
+    mesh.setMatrixAt(n, partM);
     mesh.setColorAt(n, colourFor(a, e, kind));
+    const walking = moving ? Math.sin((t + f) * Math.PI * 2 * (1 + a.speed) + uid) * 0.65 : 0;
+    placeBody(kind, n, a, animM, walking);
     uids.push(uid); n++;
   };
   for (const [uid, [x0, y0, e0]] of now) {
     const nx = next.get(uid);
     if (nx) {
-      const moving = wrapd(nx[0] - x0) || wrapd(nx[1] - y0);
+      moving = wrapd(nx[0] - x0) || wrapd(nx[1] - y0);
       const yaw = moving ? Math.atan2(wrapd(nx[0] - x0), wrapd(nx[1] - y0)) : (headings.get(uid) ?? 0);
       headings.set(uid, yaw);
       place(uid, lerpWrap(x0, nx[0], ease(f)), lerpWrap(y0, nx[1], ease(f)), e0 + (nx[2] - e0) * f, 1, yaw);
     } else {
-      place(uid, x0, y0, e0, 1 - f, headings.get(uid) ?? 0);  // dies or is eaten: shrink away
+      moving = 0; place(uid, x0, y0, e0, 1 - f, headings.get(uid) ?? 0);  // dies or is eaten: shrink away
     }
   }
+  moving = 0;
   for (const [uid, [x1, y1, e1]] of next) if (!now.has(uid)) place(uid, x1, y1, e1, f, 0);  // born: grow in
   mesh.count = n;
   mesh.instanceMatrix.needsUpdate = true;
   if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+  for (const p of bodyParts[kind]) { p.mesh.count = n; p.mesh.instanceMatrix.needsUpdate = true; if (p.mesh.instanceColor) p.mesh.instanceColor.needsUpdate = true; }
 }
 const headings = new Map();
 
@@ -344,6 +472,85 @@ function drawTrails(t) {
   trailLines.geometry.setAttribute("position", new THREE.Float32BufferAttribute(pts, 3));
 }
 
+// ---------- through its eyes ----------
+let pov = null, povLast = null, povYaw = 0;
+const sightOf = (a) => 1 + Math.floor(3 * a.sight + 0.5);
+const stealthOf = () => ep.stealth ?? (/stealth|room/.test(ep.world || "") ? 1 : 0);
+let coverMap = null;
+// Could the animal being lived see something of this kind at this cell? The same rules as simulations/evo.py's observe.
+function senses(me, x, y, kind) {
+  const a = ep.animals[pov], d = Math.max(Math.abs(wrapd(x - me[0])), Math.abs(wrapd(y - me[1])));
+  if (d > sightOf(a)) return false;
+  if (kind === "pred" && a.kind === "prey" && stealthOf() > 0 && d > stealthOf()) return false;
+  if (coverMap && coverMap[Math.round(y) % N * N + Math.round(x) % N] && d > 1) return false;
+  return true;
+}
+function povStart(uid, jump = true) {
+  pov = uid; selected = uid; povLast = null; povYaw = headings.get(uid) ?? 0;
+  const a = ep.animals[uid];
+  coverMap = ep.cover ? bits(ep.cover, N * N) : null;
+  scene.fog.near = Math.max(0.5, sightOf(a) - 0.5); scene.fog.far = sightOf(a) + 1.6;
+  camera.fov = 75; camera.updateProjectionMatrix();
+  controls.enabled = false;
+  $("pov").style.display = "block"; $("info").style.display = "none"; $("legend").style.display = "none";
+  $("povTitle").textContent = `${a.kind === "prey" ? "Grazer" : "Hunter"} #${uid}, generation ${a.gen}`;
+  $("povMealsName").textContent = a.kind === "prey" ? "lived through" : "catches";
+  $("povEnd").textContent = "";
+  if (jump) { setStep(a.born); $("speed").value = "4"; if (!playing) $("play").click(); }
+}
+function povStop() {
+  if (pov == null) return;
+  const me = frames[t][ep.animals[pov].kind].get(pov) || povLast;
+  pov = null; scene.fog.near = 70; scene.fog.far = 160; camera.fov = 50; camera.updateProjectionMatrix();
+  controls.enabled = true;
+  $("pov").style.display = "none"; $("legend").style.display = "block"; $("info").style.display = selected == null ? "none" : "block";
+  if (me) { controls.target.set(me[0] + 0.5, 0, me[1] + 0.5); camera.position.set(me[0] + 0.5, 14, me[1] + 14); }
+}
+function povCamera(s) {
+  const at = animalAt(pov, s);
+  if (at) povLast = frames[Math.max(0, Math.min(T - 1, Math.floor(s)))][ep.animals[pov].kind].get(pov) || povLast;
+  const p = at || (povLast && [povLast[0] + 0.5, height(povLast[0], povLast[1]), povLast[1] + 0.5]);
+  if (!p) return;
+  const want = headings.get(pov) ?? povYaw;
+  povYaw += Math.atan2(Math.sin(want - povYaw), Math.cos(want - povYaw)) * 0.12;
+  const eye = ep.animals[pov].kind === "prey" ? 0.55 : 0.8;
+  camera.position.set(p[0], p[1] + eye, p[2]);
+  camera.lookAt(p[0] + Math.sin(povYaw), p[1] + eye - 0.12, p[2] + Math.cos(povYaw));
+}
+function endOfLife(a, ti) {
+  if (a.died >= T) return "Still alive when this recording ends.";
+  const last = frames[Math.max(a.died - 1, a.born)][a.kind].get(pov);
+  if (!last) return "Gone.";
+  if (a.kind === "prey") {
+    const hit = [...frames[Math.min(a.died, T - 1)].pred.values()].some((q) => q[0] === last[0] && q[1] === last[1]);
+    if (hit) return `Caught by a hunter at age ${a.died - a.born}.`;
+  }
+  return last[2] < 3 ? `Starved at age ${a.died - a.born}.` : `Died at age ${a.died - a.born}.`;
+}
+function drawPov(ti) {
+  const a = ep.animals[pov], cur = frames[ti][a.kind].get(pov), cap = a.kind === "prey" ? 40 : 60;
+  const me = cur || povLast;
+  $("povEnergy").textContent = cur ? `${cur[2].toFixed(1)} / ${cap}` : "gone";
+  $("povBar").style.width = `${cur ? Math.round(Math.min(cur[2] / cap, 1) * 100) : 0}%`;
+  $("povAge").textContent = `${Math.max(0, Math.min(ti, a.died) - a.born)} of ${a.died - a.born} steps`;
+  if (a.kind === "pred") { let n = 0; for (let k = a.born; k <= Math.min(ti, T - 1); k++) if (frames[k].ate.has(pov)) n++; $("povMeals").textContent = n; }
+  else $("povMeals").textContent = `${Math.max(0, Math.min(ti, a.died) - a.born)} steps`;
+  if (!cur && ti >= a.died) { $("povEnd").textContent = endOfLife(a, ti); if (playing) $("play").click(); }
+  if (!me) return;
+  const g = $("povGrid").getContext("2d"), c = 22, r = 4;
+  g.fillStyle = "#000"; g.fillRect(0, 0, 198, 198);
+  const sees = sightOf(a), f = frames[ti];
+  for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+    if (Math.max(Math.abs(dx), Math.abs(dy)) > sees) continue;
+    const x = ((me[0] + dx) % N + N) % N, y = ((me[1] + dy) % N + N) % N, px = (dx + r) * c, py = (dy + r) * c;
+    g.fillStyle = f.plant[y * N + x] ? "#2f8f46" : "#3b2c1e"; g.fillRect(px + 1, py + 1, c - 2, c - 2);
+  }
+  const dot = (x, y, colour) => { const dx = wrapd(x - me[0]), dy = wrapd(y - me[1]); if (Math.max(Math.abs(dx), Math.abs(dy)) > r) return;
+    g.fillStyle = colour; g.beginPath(); g.arc((dx + r + 0.5) * c, (dy + r + 0.5) * c, c * 0.32, 0, 7); g.fill(); };
+  for (const kind of ["prey", "pred"]) for (const [uid, q] of f[kind]) if (uid !== pov && senses(me, q[0], q[1], kind)) dot(q[0], q[1], kind === "prey" ? "#f0f0f0" : "#e5484d");
+  dot(me[0], me[1], "#ffb000");
+}
+
 // ---------- selection ----------
 let selected = null;
 const ray = new THREE.Raycaster(), mouse = new THREE.Vector2();
@@ -355,13 +562,15 @@ renderer.domElement.addEventListener("pointerup", (e) => {
   ray.setFromCamera(mouse, camera);
   prey.boundingSphere = pred.boundingSphere = null;  // instances moved since the bounds were cached
   const hit = ray.intersectObjects([prey, pred])[0];
+  if (pov != null) return;
   selected = hit ? hit.object.userData.uids[hit.instanceId] : null;
   setMarker(null); $("caption").style.display = "none";
   $("info").style.display = selected == null ? "none" : "block";
+  $("eyes").disabled = selected == null;
 });
 
 function drawInfo(t) {
-  if (selected == null) { sightBox.visible = false; return; }
+  if (selected == null || pov != null) { sightBox.visible = false; return; }
   const a = ep.animals[selected], kind = a.kind;
   const cur = frames[t][kind].get(selected);
   const bar = (v) => `<div class="bar"><i style="width:${Math.round(Math.max(0, Math.min(1, v)) * 100)}%"></i></div>`;
@@ -412,12 +621,22 @@ function showScale() {
   }
 }
 $("colour").onchange = showScale;
+$("eyes").onclick = () => { if (selected != null) povStart(selected); };
+$("povExit").onclick = povStop;
+$("randomLife").onclick = () => {
+  const ids = Object.keys(ep.animals).map(Number), lived = (u) => ep.animals[u].died - ep.animals[u].born;
+  const long = ids.filter((u) => lived(u) >= 20);
+  const pool = long.length ? long : ids;
+  povStop(); povStart(pool[Math.floor(Math.random() * pool.length)]);
+};
 $("trails").onclick = () => { trailLines.visible = !trailLines.visible; $("trails").classList.toggle("on", trailLines.visible); drawTrails(t); };
 addEventListener("keydown", (e) => {
   if (e.target.tagName === "SELECT") return;
   if (e.code === "Space") { e.preventDefault(); $("play").click(); }
   if (e.code === "ArrowRight") setStep(t + 1);
   if (e.code === "ArrowLeft") setStep(t - 1);
+  if (e.code === "KeyE") { if (pov != null) povStop(); else if (selected != null) povStart(selected); }
+  if (e.code === "Escape") povStop();
 });
 // The bars wrap on narrow windows, so the panels are placed from their real heights.
 function layout() {
@@ -444,13 +663,14 @@ function loop(now) {
     drawInfo(t);
     placeMarker(t + frac);
     ageRings();
-    if (selected != null) {  // follow the selected animal
+    if (pov != null) { povCamera(t + frac); drawPov(t); }
+    else if (selected != null) {  // follow the selected animal
       const a = ep.animals[selected], cur = frames[t][a.kind].get(selected);
       if (cur) { const target = new THREE.Vector3(cur[0] + 0.5, height(cur[0], cur[1]), cur[1] + 0.5);
         if (target.distanceTo(controls.target) < N / 3) { const d = target.clone().sub(controls.target).multiplyScalar(0.08); controls.target.add(d); camera.position.add(d); } }
     }
   }
-  controls.update();
+  if (pov == null) controls.update();
   renderer.render(scene, camera);
 }
 requestAnimationFrame(loop);
@@ -468,14 +688,28 @@ async function load(run) {
   $("hills").title = realHeight ? "This world has real hills: climbing costs energy, high ground sees further, and hills hide what is behind them."
                                : "Visual preview of a Stage 8 heightfield. The agents in this run were trained on a flat grid and do not feel height.";
   $("hills").classList.toggle("on", !!realHeight || hills);
+<<<<<<< public
   $("meta").textContent = `${ep.world ?? "predprey"} · update ${ep.update ?? "?"} · ${ep.bodies} bodies · ${T} steps${realHeight ? " · real hills" : ""}`;
   $("legendCover").style.display = ep.cover ? "block" : "none";
   layout();
   if (!CAPTURE && run !== params.get("run")) history.replaceState(null, "", `?run=${encodeURIComponent(run)}`);
   selected = null; $("info").style.display = "none"; headings.clear();
+=======
+  $("meta").textContent = `${ep.world} · update ${ep.update ?? "?"} · ${ep.bodies} bodies · ${T} steps${realHeight ? " · real hills" : ""}`;
+  if (!CAPTURE) history.replaceState(null, "", `?run=${encodeURIComponent(run)}`);
+  povStop(); selected = null; $("info").style.display = "none"; headings.clear(); $("eyes").disabled = true;
+<<<<<<< public
+<<<<<<< public
+>>>>>>> new private
+=======
+>>>>>>> new private
+=======
+>>>>>>> new private
   buildWorld(); groundStep = -1;
   $("scrub").max = T - 1; setStep(0);
   $("msg").style.display = "none";
+  const eyes = params.get("eyes");  // a shareable life: ?run=NAME&eyes=ID
+  if (!CAPTURE && eyes !== null && ep.animals[eyes]) { params.delete("eyes"); povStart(+eyes); }
 }
 
 // ---------- recorder API (?capture=1) ----------
@@ -541,7 +775,26 @@ window.cap = {
     if (o.colour) { $("colour").value = o.colour; }
     if (o.trails !== undefined) trailLines.visible = o.trails;
     if (o.select !== undefined) selected = o.select;
+<<<<<<< public
+<<<<<<< public
+<<<<<<< public
     if (o.marker !== undefined) setMarker(o.marker);
+=======
+=======
+>>>>>>> new private
+=======
+>>>>>>> new private
+    if (o.pov !== undefined) { if (o.pov == null) povStop(); else povStart(o.pov, false); }
+    if (o.marker !== undefined) {  // a gold arrow over one animal, drawn on top of everything
+      markerUid = o.marker;
+      if (!marker) {
+        marker = new THREE.Mesh(new THREE.ConeGeometry(0.34, 0.8, 16).rotateX(Math.PI),
+          new THREE.MeshBasicMaterial({ color: 0xffb000, depthTest: false, transparent: true }));
+        marker.renderOrder = 10; scene.add(marker);
+      }
+      marker.visible = markerUid != null;
+    }
+>>>>>>> new private
     if (o.hills !== undefined && !realHeight) { hills = o.hills; buildWorld(); groundStep = -1; }
   },
   frame(s, cam) {
@@ -550,15 +803,43 @@ window.cap = {
     t = ti; drawGround(ti); drawTrails(ti);
     drawAnimals("prey", prey, ti, f); drawAnimals("pred", pred, ti, f);
     drawInfo(ti); ringsAt(s);
+<<<<<<< public
     placeMarker(s);
     camera.fov = cam.fov || 50; camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
     camera.position.set(cam.p[0], cam.p[1], cam.p[2]); camera.lookAt(cam.t[0], cam.t[1], cam.t[2]);
+=======
+    if (marker && markerUid != null) {
+      const at = animalAt(markerUid, s);
+      marker.visible = !!at;
+      if (at) marker.position.set(at[0], at[1] + 2.3, at[2]);
+    }
+    if (pov != null) povCamera(s);
+    else {
+      camera.fov = cam.fov || 50; camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+      camera.position.set(cam.p[0], cam.p[1], cam.p[2]); camera.lookAt(cam.t[0], cam.t[1], cam.t[2]);
+    }
+<<<<<<< public
+<<<<<<< public
+>>>>>>> new private
+=======
+>>>>>>> new private
+=======
+>>>>>>> new private
     renderer.render(scene, camera);
     return true;
   },
 };
 
+addEventListener("message", (e) => {  // tri.html moves all three panes together
+  if (!BARE || !ep || !e.data || e.data.type !== "step") return;
+  const want = Math.min(e.data.t, T - 1);
+  if (want !== t) { setStep(want); spawnRings(t); }
+  if (e.data.t > T - 1) $("msg").style.display = "none";
+  parent.postMessage({ type: "pane", run: params.get("run"), T, stats: $("stats").textContent }, "*");
+});
+
 (async () => {
+  if (BARE) for (const id of ["top", "legend", "bottom", "info"]) $(id).style.display = "none";
   if (CAPTURE) {
     for (const id of ["top", "legend", "bottom", "info", "msg"]) $(id).style.display = "none";
     await load(params.get("run")); $("msg").style.display = "none"; $("info").style.display = "none";

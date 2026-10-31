@@ -108,7 +108,9 @@ def record(world, wcfg, prey_pi, pred_pi, key, pool=None, max_steps=None) -> dic
     final = jax.device_get(state)
     terrain = np.asarray(final.terrain) if hasattr(final, "terrain") else np.zeros((wcfg.size, wcfg.size))
     out = {"size": wcfg.size, "steps": steps, "animals": animals, "terrain": _bytes(terrain / 2.0),
-            "flank": bool(getattr(wcfg, "flank", False)), "pack_size": int(getattr(wcfg, "pack_size", 0))}
+            "flank": bool(getattr(wcfg, "flank", False)), "pack_size": int(getattr(wcfg, "pack_size", 0)),
+            "stealth": int(getattr(wcfg, "stealth_radius", 0)), "climate": getattr(wcfg, "climate", ""),
+            "winter_len": int(getattr(wcfg, "winter_len", 0))}
     if getattr(wcfg, "hills", False):  # Stage 8a: the real height map, which the viewer draws
         from simulations.evo import height_map
         out["height"] = _bytes(height_map(wcfg))

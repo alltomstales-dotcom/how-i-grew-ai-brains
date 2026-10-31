@@ -42,6 +42,7 @@ class EvoConfig(WorldConfig):
     founder_animal: tuple = (0.2, 0.5, 0.5, 0.5, 0.5, 0.5)  # speed, sight, breed, size, brain, diet
     founder_plant: tuple = (0.5, 0.2)
     speed_cost: float = 1.0
+    pred_speed_cost: float = -1.0  # what speed costs hunters; < 0 = speed_cost (Stage 10e)
     sight_cost: float = 0.5
     seed_rate: float = 0.03  # 0.2 left food plentiful and prey stuck at the slot cap
     tough_seed_cost: float = 0.8
@@ -58,6 +59,7 @@ class EvoConfig(WorldConfig):
     season_len: int = 0  # steps per season (0 = none); the map's halves take turns being in season
     winter_len: int = 0  # steps per half-year (0 = none); the whole map alternates summer and winter (Stage 9c)
     winter_value: float = 0.25  # what a plant feeds in winter, against 1 in summer
+    climate: str = ""  # the viewer's colours for this continent (Stage 11a)
     offseason_death: float = 3.0  # plants out of season die this many times faster and cannot seed
     sizes: bool = False  # the size gene matters: tough plants, burrows, catches and upkeep
     burrow_size: float = 0.5  # only animals smaller than this fit into a burrow
@@ -95,6 +97,7 @@ class EvoConfig(WorldConfig):
     omnivore: bool = False  # hunters can eat plants; their diet gene splits what they get from meat and plants (Stage 9a)
     plant_digest: float = 1.0  # how much of a grazer's plant meal a hunter with diet 0 gets
     diet_fixed: bool = False  # the control: every hunter gets 0.5 of each, whatever its gene says
+    stealth_radius: int = 0  # > 0: a grazer sees a hunter only within this many cells (Stage 10f)
     fat_sense: bool = False  # animals can see how much energy visible prey hold (Stage 5b)
     stored_meals: bool = False  # a catch is worth what the prey stored, times meal_share, not a fixed catch_energy (Stage 5b)
     meal_share: float = 1.25  # meant to match catch_energy 25 with prey at about 20; prey eaten held about 9.5, so about 12 (5b v1)
@@ -227,6 +230,63 @@ class LastingAmbushConfig(AmbushConfig):
 class LastingAmbushM100Config(LastingAmbushConfig):
     catch_energy: float = 100.0
     pred_energy_cap: float = 200.0
+
+
+@dataclass(frozen=True)
+class LastingSprintConfig(LastingConfig):
+    """Stage 10e: speed costs hunters nothing, so they can evolve to be built for the chase."""
+    pred_speed_cost: float = 0.0
+
+
+@dataclass(frozen=True)
+class LastingSprintM100Config(LastingSprintConfig):
+    catch_energy: float = 100.0
+    pred_energy_cap: float = 200.0
+
+
+@dataclass(frozen=True)
+class LastingStealthConfig(LastingConfig):
+    """Stage 10f: hunters are camouflaged, so a grazer sees one only from the next cell."""
+    stealth_radius: int = 1
+
+
+@dataclass(frozen=True)
+class LastingStealthM100Config(LastingStealthConfig):
+    catch_energy: float = 100.0
+    pred_energy_cap: float = 200.0
+
+
+@dataclass(frozen=True)
+class LastingRoomConfig(LastingStealthConfig):
+    """Stage 10g: three times the slots, so the slot caps don't set the numbers."""
+    max_prey: int = 288
+    max_pred: int = 96
+
+
+@dataclass(frozen=True)
+class ContinentConfig(LastingStealthConfig):
+    """Stage 11a: 256 x 256 at the density of the 48 x 48 world (96 and 32 at most), with camouflage and plants that last."""
+    size: int = 256
+    max_prey: int = 2730
+    max_pred: int = 910
+    init_prey: int = 682
+    init_pred: int = 227
+    climate: str = "meadow"
+
+
+@dataclass(frozen=True)
+class ForestConfig(ContinentConfig):
+    """Thickets hide whoever is inside, and walking costs energy (stage 8b's rules)."""
+    move_cost: float = 0.5
+    thickets: float = 0.25
+    climate: str = "forest"
+
+
+@dataclass(frozen=True)
+class TundraConfig(ContinentConfig):
+    """Half of every 120 steps is winter, when plants feed a quarter as much (stage 9c's rule)."""
+    winter_len: int = 60
+    climate: str = "tundra"
 
 
 @dataclass(frozen=True)
@@ -636,6 +696,9 @@ def observe(cfg: EvoConfig, state: State) -> tuple[jax.Array, jax.Array]:
             if cfg.cover_hides_pred:
                 w = w.at[..., 3].set(jnp.where(hidden, 0.0, w[..., 3]))
         w = jnp.where(seen[..., None], w, 0.0)
+        if cfg.stealth_radius > 0 and kind == "prey":  # hunters are camouflaged beyond this range
+            near = jnp.abs(jnp.arange(cfg.view) - cfg.view // 2) <= cfg.stealth_radius
+            w = w.at[..., 3].set(w[..., 3] * (near[:, None] & near[None, :]))
         own = jnp.concatenate([(sp.energy / cap)[:, None], sp.genes[:, :3]], axis=-1)  # (N, 4)
         own = jnp.broadcast_to(own[:, None, None, :], w.shape[:-1] + (4,))
         size = jnp.broadcast_to(sp.genes[:, None, None, 3:4], w.shape[:-1] + (1,))
@@ -757,9 +820,9 @@ def _plant_value(cfg: EvoConfig, t):
     return jnp.where((t // cfg.winter_len) % 2 == 0, 1.0, cfg.winter_value)
 
 
-def _metabolise(cfg: EvoConfig, sp: Species, cap: float, base: float = 1.0) -> Species:
+def _metabolise(cfg: EvoConfig, sp: Species, cap: float, base: float = 1.0, speed_cost: float | None = None) -> Species:
     radius = sight_radius(sp.genes[:, 1])
-    cost = base + cfg.speed_cost * sp.genes[:, 0] ** 2 + cfg.sight_cost * (radius - 1) / 3
+    cost = base + (cfg.speed_cost if speed_cost is None else speed_cost) * sp.genes[:, 0] ** 2 + cfg.sight_cost * (radius - 1) / 3
     if cfg.sizes:
         cost = cost + cfg.size_cost * sp.genes[:, 3]
     if cfg.brains:
@@ -984,7 +1047,7 @@ def advance(cfg: EvoConfig, key: jax.Array, state: State, prey_act, pred_act) ->
     prey = prey._replace(energy=prey.energy - cfg.signal_cost * prey_sig)
     pred = pred._replace(energy=pred.energy - cfg.signal_cost * pred_sig)
     prey = _metabolise(cfg, prey, cfg.prey_energy_cap)
-    pred = _metabolise(cfg, pred, cfg.pred_energy_cap, cfg.pred_base_cost)
+    pred = _metabolise(cfg, pred, cfg.pred_energy_cap, cfg.pred_base_cost, cfg.pred_speed_cost if cfg.pred_speed_cost >= 0 else None)
 
     # 5. Starvation. Deaths are recorded before any slot is reused.
     prey = prey._replace(alive=prey.alive & (prey.energy > 0))

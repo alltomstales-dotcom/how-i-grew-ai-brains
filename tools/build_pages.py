@@ -20,6 +20,7 @@ def build(out: Path, root: Path = ROOT) -> Path:
     shutil.copytree(root / "site", out)
     dash = root / "viz" / "dashboard"
     shutil.copy(dash / "world3d.html", out / "watch" / "index.html")
+    shutil.copy(dash / "tri.html", out / "watch" / "tri.html")
     shutil.copytree(dash / "vendor", out / "watch" / "vendor")
     shutil.copy(root / "videos.json", out / "videos.json")
     return out

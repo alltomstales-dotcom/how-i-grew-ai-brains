@@ -76,9 +76,17 @@ side by side: plant eaters boom and crash, meat eaters outlast them, and worlds 
 150-300 steps, and restarts hid it. Plants that spread faster give a world that lasts for simple hand-written animals, though
 it may be leaning on the slot caps. [Trained brains don't](docs/specs/2026-10-31-lasting-brains-design.md): the world lasts and
 the hunters die. [Swapping in hand-written animals](docs/specs/2026-10-31-big-meals-design.md) showed why: trained grazers are
-what kill them. That's where this stands, and the question is open: [what would you change?](SUGGESTIONS.md)
+what kill them.
 
-**So far, [8 stages pass and 17 fail](docs/results.md).** The failures have often taught more than the passes.
+**Then camouflage.** [When a grazer can't see a hunter coming](docs/specs/2026-10-31-camouflage-design.md), both species last, the
+first time for trained brains, and with [more room](docs/specs/2026-10-31-room-design.md) hunters hold grazers well under their limit.
+
+**Now, three continents.** [Three connected worlds with their own climates](docs/specs/2026-10-31-continents-design.md), brains and
+gene pools, on two machines: open meadow, forest and tundra. On two sets of fresh seeds, grazers' sight comes out in the same order
+across climates, and tundra's seasons drive a real predator and prey cycle. Forest's hunters die out, and migrants leave few
+descendants, so there's plenty left. [What would you change?](SUGGESTIONS.md)
+
+**So far, [8 stages pass and 21 fail](docs/results.md).** The failures have often taught more than the passes.
 
 ## Watch it
 
@@ -108,6 +116,7 @@ The series is on [NeatScienceStuff](https://www.youtube.com/@NeatScienceStuff), 
 | 9 | My AI seemed to learn with no memory. Then I counted the dead worlds. | coming Nov 6 |
 | 10 | I let my AI hunters eat plants. They stopped hunting. | coming Nov 7 |
 | 11 | My AI hunters split in two. Then I found the catch. | coming Nov 8 |
+| 12 | My AI grazers got so good that hunters keep starving. | coming Nov 9 |
 <!-- videos:end -->
 
 ## Build this with us

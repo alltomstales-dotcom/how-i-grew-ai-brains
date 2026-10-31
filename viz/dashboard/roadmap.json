@@ -112,6 +112,10 @@
     "10b, do trained brains last too? FAIL on survival: 0.000 of worlds at step 2,000; the world lasts, hunters don't",
     "10c, does a big enough meal let trained hunters last? FAIL: 0.066 and 0.098 of worlds at a meal of 250, none at 100; worlds fill with hunters or lose them all. A probe shows trained grazers are what kill hunters",
     "10d, can a viewer's idea make a world last? FAIL: 0.000 of worlds at step 2,000 at meals of 25 and 100, grazers still at the cap",
+    "10e, do hunters built for the chase last? FAIL: they evolved speed, and both species still alive at step 2,000 in 0.000 and 0.008 of worlds",
+    "10f, can grazers dodge what they can't see coming? FAIL by the rule on grazers at the cap, and the first trained brains in a world that lasts: 0.957 and 0.961 of worlds at step 2,000",
+    "10g, with room to move, what sets the numbers? FAIL by the rule on hunters at their cap (95 of 96); both species last in 0.984 and 0.996 of worlds, and grazers settle at 113 of 288, held down by hunters",
+    "11a, do different climates make different animals? FAIL by the rule on two of three bars, and climate clearly shaped bodies: grazer sight 0.76 / 0.33 / 0.12 and 0.68 / 0.32 / 0.10 across meadow, forest and tundra on two sets of seeds; forest's hunters die out, and migrants left few descendants",
     "A food web: mid-predators and scavengers (Stage 5b)",
     "Maps of 128-256 cells, sharded across the GB10",
     "Armour and camouflage genes"

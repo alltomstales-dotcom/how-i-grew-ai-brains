@@ -18,11 +18,21 @@ import numpy as np
 from agents.policies import chase_policy, forget_after, pair_act, pair_memory
 from scripts.eval import EVAL_SEED
 from scripts.meals import load
+from simulations.evo import GENE_NAMES
 
 BOTH_TARGET = 0.5
 
 
-def curve(world, cfg, prey_pi, pred_pi, key, episodes: int, pool=None) -> np.ndarray:
+def force_genes(state, spec: str):
+    """Set hunters' genes at the start. Their children inherit from there, with mutation as usual."""
+    genes = state.pred.genes
+    for item in spec.split(","):
+        name, value = item.split("=")
+        genes = genes.at[..., GENE_NAMES["animal"].index(name)].set(float(value))
+    return state._replace(pred=state.pred._replace(genes=genes))
+
+
+def curve(world, cfg, prey_pi, pred_pi, key, episodes: int, pool=None, force: str | None = None) -> np.ndarray:
     """(steps, 9): worlds with both species alive, worlds with hunters, hunters, grazers, before each step, then
     grazer energy (total), plant cover, unbitten plants, grazer births and grazer deaths."""
     @jax.jit
@@ -33,6 +43,8 @@ def curve(world, cfg, prey_pi, pred_pi, key, episodes: int, pool=None) -> np.nda
             state = jax.vmap(partial(world.reset, cfg))(keys)
         else:
             state = jax.vmap(partial(world.reset, cfg), in_axes=(0, None))(keys, pool)
+        if force:
+            state = force_genes(state, force)
 
         def body(carry, k):
             state, mem = carry
@@ -58,9 +70,11 @@ def main(argv=None) -> int:
     p.add_argument("--run-dir", required=True)
     p.add_argument("--episodes", type=int, default=256)
     p.add_argument("--evolved", action="store_true")
+    p.add_argument("--every", type=int, help="write the curve at this spacing to persist_fine.json as well")
     p.add_argument("--steps", type=int, help="play this long instead of the run's own max_steps")
     p.add_argument("--bot-grazers", action="store_true", help="probe only: grazers walk to the nearest plant in view; writes nothing")
     p.add_argument("--bot-hunters", action="store_true", help="probe only: hunters walk to the nearest grazer in view; writes nothing")
+    p.add_argument("--force-pred", help="probe only: start hunters with these genes, e.g. breed=0.1,sight=0.7; writes nothing")
     p.add_argument("--seed-rate", type=float, help="probe only: override how fast plants spread; writes nothing")
     args = p.parse_args(argv)
     run_dir = Path(args.run_dir)
@@ -73,15 +87,19 @@ def main(argv=None) -> int:
         prey_pi = chase_policy(0)
     if args.bot_hunters:
         pred_pi = chase_policy(2)
-    rows = curve(world, cfg, prey_pi, pred_pi, jax.random.PRNGKey(EVAL_SEED), args.episodes, pool)
+    rows = curve(world, cfg, prey_pi, pred_pi, jax.random.PRNGKey(EVAL_SEED), args.episodes, pool, args.force_pred)
     table = [{"step": int(t), "both_share": float(rows[t, 0] / args.episodes), "hunter_worlds": float(rows[t, 1] / args.episodes),
               "hunters": float(rows[t, 2] / args.episodes), "grazers": float(rows[t, 3] / args.episodes),
               "grazer_energy": float(rows[t, 4] / max(rows[t, 3], 1.0)), "plant_cover": float(rows[t, 5]), "unbitten": float(rows[t, 6]),
               "grazer_births": float(rows[t, 7] / args.episodes), "grazer_deaths": float(rows[t, 8] / args.episodes)}
              for t in [*range(0, cfg.max_steps, max(50, cfg.max_steps // 10)), cfg.max_steps - 1]]
+    if args.every:
+        fine = [{"step": int(t), "hunters": float(rows[t, 2] / args.episodes), "grazers": float(rows[t, 3] / args.episodes),
+                 "grazer_energy": float(rows[t, 4] / max(rows[t, 3], 1.0)), "plant_cover": float(rows[t, 5])} for t in range(0, cfg.max_steps, args.every)]
+        (run_dir / "persist_fine.json").write_text(json.dumps(fine, indent=1))
     last = table[-1]
     out = {"curve": table, "both_at_end": last["both_share"], "pass": bool(last["both_share"] >= BOTH_TARGET)}
-    if args.seed_rate is None and not args.bot_grazers and not args.bot_hunters:
+    if args.seed_rate is None and not args.bot_grazers and not args.bot_hunters and not args.force_pred:
         (run_dir / "persist.json").write_text(json.dumps(out, indent=1))
     for r in table:
         print(f"step {r['step']:3d}: both species in {r['both_share']:.3f} of worlds; hunters {r['hunters']:.2f}, grazers {r['grazers']:.1f} at {r['grazer_energy']:.1f} energy; plants {r['plant_cover']:.2f}, unbitten {r['unbitten']:.3f}; births {r['grazer_births']:.2f}, deaths {r['grazer_deaths']:.2f}")

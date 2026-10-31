@@ -30,6 +30,10 @@ replaced with neutral wording; the engineering and the results are unchanged.
 | [Lasting brains](2026-10-31-lasting-brains-design.md) | 10b: do trained brains last too? | FAIL on survival; the world lasts, hunters don't |
 | [Big meals](2026-10-31-big-meals-design.md) | 10c: does a big enough meal let them last? | FAIL; trained grazers are what kill hunters |
 | [Costly dodging](2026-10-31-costly-dodging-design.md) | 10d: can walking costs and thickets make a world last? | FAIL |
+| [Sprint](2026-10-31-sprint-design.md) | 10e: do hunters built for the chase last? | FAIL |
+| [Camouflage](2026-10-31-camouflage-design.md) | 10f: can grazers dodge what they can't see coming? | FAIL by the rule; the first trained brains in a world that lasts |
+| [Room](2026-10-31-room-design.md) | 10g: with room to move, what sets the numbers? | FAIL by the rule on hunters at their cap; grazers settle well below theirs |
+| [Continents](2026-10-31-continents-design.md) | 11a: do different climates make different animals? | FAIL on two of three bars; climate clearly shaped bodies |
 
 The league and predator-stall work of Stage 3b is written up in the [roadmap](../roadmap.md).
 A summary of all of it is in [results.md](../results.md).

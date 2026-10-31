@@ -265,6 +265,14 @@ share beats the other's by at least 0.10, and beats its own at 0-10 steps by at 
 
 **Stage 10d, can a viewer's idea make a world last? (FAIL, 2026-10-31).** Stage 8b's walking costs and thickets, with plants that last, at meals of 25 and 100: both species alive at step 2,000 in 0.000 of worlds on both seeds, grazers still at the cap. Learned hunters beat a fixed chaser only at a meal of 100 (0.72x and 0.86x), where they catch about twice as often and still die out. Spec: `docs/specs/2026-10-31-costly-dodging-design.md`.
 
+**Stage 10e, do hunters built for the chase last? (FAIL, 2026-10-31).** Speed cost hunters nothing, and they evolved it (0.82 and 0.78, against 0.18 and 0.16), but both species alive at step 2,000 stayed at 0.000 at a meal of 25 and 0.008 at 100. Against my prediction. Spec: `docs/specs/2026-10-31-sprint-design.md`.
+
+**Stage 10f, can grazers dodge what they can't see coming? (FAIL by the rule, 2026-10-31, and the first trained brains in a world that lasts).** Hunters are camouflaged: a grazer sees one only from the next cell. At meals of 25, both species alive at step 2,000 in 0.957 and 0.961 of worlds, where the best before was 0.098. Hunters hold about 30, catch about seven times as often, and beat a fixed chaser (0.64x and 0.66x), and grazers are born and eaten at about 1.3 per step. It fails on grazers sitting at the cap of 96. Spec: `docs/specs/2026-10-31-camouflage-design.md`.
+
+**Stage 10g, with room to move, what sets the numbers? (FAIL by the rule on hunters at their cap, 2026-10-31).** Three times the slots. Both species alive at step 2,000 in 0.984 and 0.996 of worlds, and hunters beat a fixed chaser (0.74x and 0.73x). Grazers now settle at about 113 of 288, so hunters hold them down and no slot limit sets their number, against my prediction. Hunters fill their cap (about 95 of 96), which fails the bar. Spec: `docs/specs/2026-10-31-room-design.md`.
+
+**Stage 11a, do different climates make different animals? (FAIL by the rule on two of three bars, 2026-10-31, and climate clearly shaped bodies).** Tom's idea: three connected worlds of 256 x 256 on two machines, each with its own climate, brains and gene pool: open meadow, forest with thickets and walking costs, tundra with winters. On two sets of fresh seeds, grazer sight came out meadow 0.76 and 0.68, forest 0.33 and 0.32, tundra 0.12 and 0.10, and hunter speed tundra 0.52 and 0.51, meadow 0.29 and 0.31, forest 0.19 and 0.21. Forest's hunters die out with no restarts (0.000), so bar 1 fails. Migrants left almost no descendants (at most 4.8%), so bar 2 fails and the continents were near to isolated. Tundra's seasons give the first swings in numbers, with hunters far below their cap. Spec: `docs/specs/2026-10-31-continents-design.md`.
+
 ### Stage 8: toward realism
 
 - **Physics.** Move to continuous 2-D, then 3-D, physics in JAX (Brax or MuJoCo MJX), which keeps

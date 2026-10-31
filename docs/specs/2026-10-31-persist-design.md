@@ -30,3 +30,7 @@ Reported: grazers, hunters and plant cover over time, and whether numbers cycle.
 
 `catch_energy` 75 and 150 give identical curves, as `pred_energy_cap` 60 clips any meal that size. Stage 10b trains brains in this world.
 
+## Correction (2026-10-31, while making the Part 12 Short)
+
+"A boom and bust of about 150 to 300 steps" is loose. On `pp-fatfix-0`, hunters are gone by step 300, but grazers are still at 9.5 there and fall below one around step 450. Also, the 12 passing settings sit near the caps rather than on them: 81 to 96 grazers and 27 to 32 hunters, in 0.81 to 1.00 of worlds.
+

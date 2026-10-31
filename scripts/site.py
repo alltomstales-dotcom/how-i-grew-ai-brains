@@ -10,6 +10,7 @@ import argparse
 import json
 import shutil
 import time
+import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -111,20 +112,22 @@ def build_site(runs_dir: Path) -> dict:
     runs = [run_summary(p, now) for p in runs_dir.iterdir() if (p / "config.json").exists()]
     runs.sort(key=lambda r: r["started"], reverse=True)
     data = {"generated": _iso(now), "runs": runs}
-    tmp = runs_dir / "runs.json.tmp"
+    tmp = runs_dir / f"runs.json.{uuid.uuid4().hex}.tmp"
     tmp.write_text(json.dumps(data, indent=1))
     tmp.replace(runs_dir / "runs.json")
     for src in (HOME, ROADMAP):
         dst = runs_dir / ("index.html" if src == HOME else src.name)
-        shutil.copy(src, dst.with_name(dst.name + ".tmp"))
-        dst.with_name(dst.name + ".tmp").replace(dst)
+        part = dst.with_name(f"{dst.name}.{uuid.uuid4().hex}.tmp")  # trainers in containers can share this folder
+        shutil.copy(src, part)
+        part.replace(dst)
     for src in (VIEWER, *sorted((DASH_DIR / "vendor").glob("*.js"))):
         dst = runs_dir / src.relative_to(DASH_DIR)
         if dst.exists() and dst.stat().st_size == src.stat().st_size and dst.stat().st_mtime >= src.stat().st_mtime:
             continue  # vendor files are large and rarely change
         dst.parent.mkdir(exist_ok=True)
-        shutil.copy(src, dst.with_name(dst.name + ".tmp"))
-        dst.with_name(dst.name + ".tmp").replace(dst)
+        part = dst.with_name(f"{dst.name}.{uuid.uuid4().hex}.tmp")  # trainers in containers can share this folder
+        shutil.copy(src, part)
+        part.replace(dst)
     return data
 
 

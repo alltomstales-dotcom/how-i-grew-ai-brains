@@ -6,7 +6,13 @@ cd "$(dirname "$0")/.."
 APP="$PWD"
 IMAGE="${AUTOLEARN_IMAGE:-autolearn:latest}"
 RUN_AS="$(id -u):$(id -g)"
-COMMON=(--gpus all --user "$RUN_AS" -e HOME=/tmp -v "$APP":/app -w /app)
+GPU=(--gpus all)
+# A node whose container GPU setup is out of date, and no sudo to refresh it (one of our machines): deploy/.gpu_flags
+# passes the devices and driver libraries to the container by hand. It is made on that node and never synced.
+if [ -f deploy/.gpu_flags ]; then read -r -a GPU < deploy/.gpu_flags; GPU+=(-e LD_LIBRARY_PATH=/usr/lib/aarch64-linux-gnu); for g in $(id -G); do GPU+=(--group-add "$g"); done; fi
+COMMON=("${GPU[@]}" --user "$RUN_AS" -e HOME=/tmp -v "$APP":/app -w /app)
+# Stage 11a: where animals wait to cross. Outside any home directory, since the relay runs as another user.
+if [ -d /var/tmp/autolearn-transit ]; then COMMON+=(-v /var/tmp/autolearn-transit:/transit); fi
 MEMINFO="${MEMINFO:-/proc/meminfo}"
 HEADROOM_GB="${HEADROOM_GB:-8}"  # always leave this much of the Spark's memory free (GiB)
 
@@ -75,7 +81,7 @@ case "$cmd" in
     mkdir -p runs
     docker run -d --name "$name" --label autolearn.mem_gb="$mem_gb" -e XLA_PYTHON_CLIENT_MEM_FRACTION="$FRAC" \
       "${COMMON[@]}" "$IMAGE" python -m scripts.train --mem-limit-gb "$limit" "$@" ;;
-  eval|league|compare|species|chase|signals|hills|episode3d|ambush|lifetime|scatter|meals|omnivore|persist|lasting)
+  eval|league|compare|species|chase|signals|hills|episode3d|ambush|lifetime|scatter|meals|omnivore|persist|lasting|mapbench)
     check_budget "$EVAL_GB"
     docker run --rm -e XLA_PYTHON_CLIENT_MEM_FRACTION="$FRAC" "${COMMON[@]}" "$IMAGE" python -m "scripts.$cmd" "$@" ;;
   dash)
@@ -105,6 +111,6 @@ case "$cmd" in
       docker ps -q --filter name='^autolearn-' | xargs -r docker stop
     fi ;;
   *)
-    echo "usage: remote.sh build|smoke|budget|train [--slot S] [--mem-gb G] [args]|eval [args]|league [args]|compare [args]|species [args]|chase [args]|signals [args]|hills [args]|episode3d [args]|ambush [args]|lifetime [args]|scatter [args]|meals [args]|omnivore [args]|persist [args]|lasting [args]|dash|logs [n] [slot]|status|stop [slot]" >&2
+    echo "usage: remote.sh build|smoke|budget|train [--slot S] [--mem-gb G] [args]|eval [args]|league [args]|compare [args]|species [args]|chase [args]|signals [args]|hills [args]|episode3d [args]|ambush [args]|lifetime [args]|scatter [args]|meals [args]|omnivore [args]|persist [args]|lasting [args]|mapbench [args]|dash|logs [n] [slot]|status|stop [slot]" >&2
     exit 1 ;;
 esac
