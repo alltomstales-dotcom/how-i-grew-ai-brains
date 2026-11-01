@@ -297,7 +297,11 @@ share beats the other's by at least 0.10, and beats its own at 0-10 steps by at 
 
 **Stage 13a, can camouflage evolve? (FAIL on two of four bars, 2026-11-01).** Free, it evolves quickly from hunters that hide nothing (0.94 on both seeds) and lasts about as well as my hand-set rule (0.746, 0.973). At a price of 0.25, the seeds split: 0.079 and 0.939, lasting in 0.000 and 0.172. Spec: `docs/specs/2026-11-01-camouflage-gene-design.md`.
 
-**Stage 13b, a valley, and what camouflage can cost (built 2026-11-01, training).** Founders just past the first step at the same price, and prices of 0.10 and 0.05. Spec: `docs/specs/2026-11-01-camouflage-price-design.md`.
+**Stage 13b, a valley, and what camouflage can cost (FAIL on the valley, 2026-11-01).** Founders past the first step still split at 0.25 (0.937, 0.084), so a one-step valley doesn't explain it. At prices of 0.10 and 0.05 every run evolves the gene and worlds last (0.594, 0.891 and 0.711, 0.781): the first time hiding that evolved, at a price, has carried a trained world. Spec: `docs/specs/2026-11-01-camouflage-price-design.md`.
+
+**Stage 13c, does camouflage follow climate? (FAIL on two of three bars, 2026-11-01).** The gene ends near 0.93 everywhere, so a gap of 0.04, and set K's worlds fade. But it spreads in the same order on both sets, meadow, forest, tundra, at updates 494, 516, 539 and 35, 53, 60, which is the direction animals walk. Lineages aren't traced yet. Set L, which swept early, lasts in every meadow and tundra world. Spec: `docs/specs/2026-11-01-camouflage-climate-design.md`.
+
+**Stage 13d, are brains better at their own climate? (FAIL on both bars, 2026-11-01).** Tom's question. Training is repeatable: a same-climate brain from another run hunts within a few percent of the home brain. In tundra, tundra-trained hunters beat meadow-trained ones by 9% to 22% on all four targets, but meadow shows no steady home advantage, and grazers show none. So climate shapes bodies far more clearly than brains. Spec: `docs/specs/2026-11-01-transplant-design.md`.
 
 ### Stage 8: toward realism
 

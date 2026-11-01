@@ -46,7 +46,9 @@ replaced with neutral wording; the engineering and the results are unchanged.
 | [Small in winter](2026-11-01-small-in-winter-design.md) | 12h: why do tundra's grazers end up small? | PASS: winter plus upkeep |
 | [Small meals](2026-11-01-small-meals-design.md) | 12i: do winter's worlds fade because small grazers are small meals? | PASS, and hunters lose their edge |
 | [Camouflage gene](2026-11-01-camouflage-gene-design.md) | 13a: can camouflage evolve? | FAIL at a price, the seeds split; free, it evolves and lasts |
-| [Camouflage price](2026-11-01-camouflage-price-design.md) | 13b: a valley, and what camouflage can cost | training |
+| [Camouflage price](2026-11-01-camouflage-price-design.md) | 13b: a valley, and what camouflage can cost | FAIL on the valley; cheaper camouflage evolves and lasts |
+| [Camouflage and climate](2026-11-01-camouflage-climate-design.md) | 13c: does camouflage follow climate? | FAIL on two of three bars; it spreads in the walking order on both sets |
+| [Transplant](2026-11-01-transplant-design.md) | 13d: are brains better at their own climate? | FAIL on both bars; a one-way effect in hunters |
 
 The league and predator-stall work of Stage 3b is written up in the [roadmap](../roadmap.md).
 A summary of all of it is in [results.md](../results.md).

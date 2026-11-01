@@ -80,3 +80,17 @@ def test_the_sweep_runs_on_a_tiny_world(tmp_path):
     assert lasting.main(["--tiny", "--steps", "30", "--episodes", "2", "--out", str(tmp_path)]) == 0
     out = json.loads((tmp_path / "lasting.json").read_text())
     assert len(out) == 1 and isinstance(out[0]["pass"], bool)
+
+
+def test_transplant_swaps_only_the_focal_brain(tmp_path):
+    import json
+    import scripts.train as train
+    import scripts.transplant as transplant
+    common = ["--tiny", "--runs-dir", str(tmp_path), "--updates", "2", "--world", "lasting", "--no-clips", "--ckpt-every", "1"]
+    for run, seed in (("a", "0"), ("b", "1"), ("c", "2")):
+        assert train.main([*common, "--run-id", run, "--seed", seed]) == 0
+    assert transplant.main(["--target", str(tmp_path / "a"), "--same", str(tmp_path / "b"), "--other", str(tmp_path / "c"), "--episodes", "2"]) == 0
+    out = json.loads((tmp_path / "a" / "transplant.json").read_text())
+    assert out["same"] == "b" and out["other"] == "c" and out["hunter_ratio"] >= 0 and out["grazer_ratio"] >= 0
+    assert set(out) >= {"home", "hunter_same", "hunter_other", "grazer_same", "grazer_other"}
+

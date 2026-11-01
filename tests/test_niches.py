@@ -277,6 +277,16 @@ def test_stage_13b_only_the_price_or_the_founders_change():
         assert c.camo_cost == price and {**asdict(c), "camo_cost": base.camo_cost} == asdict(base)
 
 
+def test_stage_13c_continents_take_the_gene_and_keep_their_climate():
+    from dataclasses import asdict
+    from simulations.worlds import get_world
+    for climate, base in (("meadow", "ContinentConfig"), ("forest", "ForestConfig"), ("tundra", "TundraConfig")):
+        c, b = get_world(f"camo_{climate}")[1](), getattr(evo, base)()
+        assert c.camo_gene and c.camo_cost == 0.10 and c.stealth_radius == 0 and c.founder_animal[6] == 0.1 and not c.sizes and c.size == 256
+        changed = {"camo_gene": b.camo_gene, "camo_cost": b.camo_cost, "stealth_radius": b.stealth_radius, "founder_animal": b.founder_animal}
+        assert {**asdict(c), **changed} == asdict(b)
+
+
 def test_v3_two_fixed_plant_kinds():
     c = cfg(plant_kinds=True, plant_sigma=0.0, gene_sigma=0.05, seed_rate=1.0, tough_seed_cost=0.0, germinate_rate=0.05)
     s = evo.reset(c, KEY)

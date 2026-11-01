@@ -487,6 +487,31 @@ class Camo05Config(CamoConfig):
 
 
 @dataclass(frozen=True)
+class CamoMeadowConfig(ContinentConfig):
+    """Stage 13c: the continents, with camouflage a gene at 0.10 rather than a rule."""
+    stealth_radius: int = 0
+    camo_gene: bool = True
+    camo_cost: float = 0.10
+    founder_animal: tuple = (0.2, 0.5, 0.5, 0.5, 0.5, 0.5, 0.1)
+
+
+@dataclass(frozen=True)
+class CamoForestConfig(ForestConfig):
+    stealth_radius: int = 0
+    camo_gene: bool = True
+    camo_cost: float = 0.10
+    founder_animal: tuple = (0.2, 0.5, 0.5, 0.5, 0.5, 0.5, 0.1)
+
+
+@dataclass(frozen=True)
+class CamoTundraConfig(TundraConfig):
+    stealth_radius: int = 0
+    camo_gene: bool = True
+    camo_cost: float = 0.10
+    founder_animal: tuple = (0.2, 0.5, 0.5, 0.5, 0.5, 0.5, 0.1)
+
+
+@dataclass(frozen=True)
 class OmniConfig(EvoConfig):
     """Stage 9a: hunters keep their diet gene's share of every catch, and the rest of a grazer's share of plants."""
     omnivore: bool = True

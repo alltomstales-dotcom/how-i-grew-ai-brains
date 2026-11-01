@@ -128,7 +128,9 @@
     "12h, why do tundra's grazers end up small? PASS: winter shrinks them from 0.91 to 0.12, and with size free they stay at 0.93",
     "12i, do winter's worlds fade because small grazers are small meals? PASS: flat meals of 71 take worlds from 0.098 to 1.000, with grazers as small, and hunters lose their lead over the chaser",
     "13a, can camouflage evolve? Free, yes (0.94 on both seeds, lasting 0.746 and 0.973). At a price, FAIL: the seeds split, 0.079 and 0.939",
-    "13b, a valley, and what camouflage can cost (training)",
+    "13b, a valley, and what camouflage can cost: FAIL on the valley (0.937, 0.084), and prices of 0.10 and 0.05 evolve the gene and last",
+    "13c, does camouflage follow climate? FAIL: 0.93 everywhere. But it spreads meadow, forest, tundra on both sets, the direction animals walk",
+    "13d, are brains better at their own climate? FAIL: training repeats within a few percent, tundra's hunters are better in tundra and no worse in meadow, grazers show no home advantage",
     "A food web: mid-predators and scavengers (Stage 5b)",
     "Maps of 128-256 cells, sharded across the GB10",
     "Armour and camouflage genes"
