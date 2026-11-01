@@ -419,6 +419,8 @@ class GenePool(NamedTuple):
     pred_w: jax.Array
     plant_genes: jax.Array
     plant_w: jax.Array
+    prey_tag: jax.Array | None = None  # lineage marks, so a marked line survives a world's restart (Stage 11c)
+    pred_tag: jax.Array | None = None
 
 
 def sight_radius(g: jax.Array) -> jax.Array:
@@ -495,7 +497,7 @@ def _open_positions(key, n, terrain):
     return jnp.stack([idx % size, idx // size], -1).astype(jnp.int32)
 
 
-def _spawn(cfg, key, n, n_alive, start_energy, pool_genes=None, pool_gen=None, pool_w=None, tag=0, terrain=None):
+def _spawn(cfg, key, n, n_alive, start_energy, pool_genes=None, pool_gen=None, pool_w=None, tag=0, terrain=None, pool_tag=None):
     k_pos, k_found, k_draw = jax.random.split(key, 3)
     if terrain is None:
         pos = jax.random.randint(k_pos, (n, 2), 0, cfg.size, dtype=jnp.int32)
@@ -506,11 +508,15 @@ def _spawn(cfg, key, n, n_alive, start_energy, pool_genes=None, pool_gen=None, p
     if cfg.brains and cfg.brain_spread:
         genes = genes.at[:, 4].set(jax.random.uniform(jax.random.fold_in(k_found, 4), (n,)))
     gen = jnp.zeros((n,), jnp.int32)
-    if pool_genes is not None:
+    tags = jnp.full((n,), tag, jnp.int32)
+    if pool_genes is not None and pool_tag is not None:  # draw each founder's lineage mark along with its genes
+        marked = jnp.concatenate([pool_genes, pool_tag[:, None].astype(pool_genes.dtype)], axis=1)
+        drawn, gen = _draw(k_draw, n, marked, pool_w, jnp.concatenate([genes, jnp.zeros((n, 1), genes.dtype)], axis=1), pool_gen)
+        genes, tags = drawn[:, :-1], jnp.round(drawn[:, -1]).astype(jnp.int32)
+    elif pool_genes is not None:
         genes, gen = _draw(k_draw, n, pool_genes, pool_w, genes, pool_gen)
     energy = jnp.where(alive, start_energy, 0.0).astype(jnp.float32)
-    return Species(pos, energy, alive, genes.astype(jnp.float32), jnp.where(alive, gen, 0),
-                   jnp.full((n,), tag, jnp.int32))
+    return Species(pos, energy, alive, genes.astype(jnp.float32), jnp.where(alive, gen, 0), tags)
 
 
 def reset(cfg: EvoConfig, key: jax.Array, pool: GenePool | None = None) -> State:
@@ -523,9 +529,9 @@ def reset(cfg: EvoConfig, key: jax.Array, pool: GenePool | None = None) -> State
         pred = _spawn(cfg, k_pred, cfg.max_pred, cfg.init_pred, cfg.pred_start_energy, terrain=where)
     else:
         prey = _spawn(cfg, k_prey, cfg.max_prey, cfg.init_prey, cfg.prey_start_energy,
-                      pool.prey_genes, pool.prey_gen, pool.prey_w, terrain=where)
+                      pool.prey_genes, pool.prey_gen, pool.prey_w, terrain=where, pool_tag=pool.prey_tag)
         pred = _spawn(cfg, k_pred, cfg.max_pred, cfg.init_pred, cfg.pred_start_energy,
-                      pool.pred_genes, pool.pred_gen, pool.pred_w, terrain=where)
+                      pool.pred_genes, pool.pred_gen, pool.pred_w, terrain=where, pool_tag=pool.pred_tag)
     plant = (jax.random.uniform(k_grown, (cfg.size, cfg.size)) < cfg.init_grass_frac) & (terrain == 0)
     plant_genes = _plant_founders(cfg, k_found, cells)
     if pool is not None:
@@ -547,7 +553,8 @@ def gene_pool(states: State) -> GenePool:
     pred_genes, pred_gen, pred_w = animals(states.pred)
     return GenePool(prey_genes, prey_gen, prey_w, pred_genes, pred_gen, pred_w,
                     states.plant_genes.reshape(-1, PLANT_GENES),
-                    states.plant.reshape(-1).astype(jnp.float32))
+                    states.plant.reshape(-1).astype(jnp.float32),
+                    states.prey.tag.reshape(-1), states.pred.tag.reshape(-1))
 
 
 def _species_from_list(agents, n) -> Species:

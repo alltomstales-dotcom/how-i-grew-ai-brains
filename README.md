@@ -83,10 +83,11 @@ first time for trained brains, and with [more room](docs/specs/2026-10-31-room-d
 
 **Now, three continents.** [Three connected worlds with their own climates](docs/specs/2026-10-31-continents-design.md), brains and
 gene pools, on two machines: open meadow, forest and tundra. On two sets of fresh seeds, grazers' sight comes out in the same order
-across climates, and tundra's seasons drive a real predator and prey cycle. Forest's hunters die out, and migrants leave few
-descendants, so there's plenty left. [What would you change?](SUGGESTIONS.md)
+across climates, and tundra's seasons drive a real predator and prey cycle. Forest's hunters die out. We first said migrants left
+few descendants, but [that measure was flawed](docs/specs/2026-10-31-lineage-design.md), and it's being measured again now.
+[What would you change?](SUGGESTIONS.md)
 
-**So far, [8 stages pass and 21 fail](docs/results.md).** The failures have often taught more than the passes.
+**So far, [8 stages pass and 22 fail](docs/results.md).** The failures have often taught more than the passes.
 
 ## Watch it
 

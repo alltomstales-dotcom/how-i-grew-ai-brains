@@ -73,3 +73,9 @@ Each continent evolved in isolation with its own brains, and nothing here says t
 
 Each 120-step year, grazers fill their cap and fatten in summer, run out of energy in winter, and crash to about a quarter. They rebound by the next sample. Hunters lag behind: they keep rising as grazers fall, peak near 630 and drop to about 300 as grazers recover. Grazers still hit their cap in the good part of the year, and hunters never reach theirs (910). It's only measured on this set at this grain. This is the first swing in numbers from trained brains in this project, and it's driven by the seasons rather than arising on its own.
 
+## Correction (2026-10-31): the migrant measure was flawed, and "nearly isolated" is withdrawn
+
+Every world in training restarts every 500 steps, and a restart wiped the lineage tags, while migrants' genes carried on through the gene pool. So `immigrant_share` only ever counted descendants from the last few hundred steps, and bar 2 could not measure what it claimed. Stage 11b's runs show the sawtooth: on `pp-meadow-C` grazers it climbs 0.005, 0.012, 0.020, 0.033, 0.030 across the five hundred-step bins of an episode, and within episodes it peaks at 0.107, 0.082, 0.128 and 0.143 on meadow and tundra.
+
+So the statements above that migrants left almost no descendants, and that the continents were close to isolated, are not supported. How much gene flow there was is unmeasured. A rough sum: about 3% a restart, compounding over 38 restarts, could be large. The climate result in bar 3 stands as a measurement of genes, but it no longer comes with "these worlds were isolated" attached, which if anything makes it more interesting. Stage 11c measures this properly.
+

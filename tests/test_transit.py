@@ -48,6 +48,26 @@ def test_animals_leave_one_continent_and_arrive_with_their_genes_and_lineage(tmp
     assert sb["prey_immigrant_share"] > 0
 
 
+def test_a_migrant_can_replace_a_resident_in_a_full_world(tmp_path):
+    cfg, tcfg = tiny_configs("meadow")
+    cfg = replace(cfg, size=12)
+    a, b = runner_for(0, cfg, tcfg), runner_for(1, cfg, tcfg)
+    a = put_at_edge(a, cfg)
+    Transit(tmp_path, 0, 1, 1.0, 2, cfg, evo).exchange(a, 1)
+    p = b.env_state.prey
+    full = np.ones_like(np.asarray(p.alive))
+    far = np.zeros_like(np.asarray(p.pos))
+    b = b._replace(env_state=b.env_state._replace(prey=p._replace(alive=full, pos=far)))
+    lost = Transit(tmp_path / "x", 1, 0, 0.0, 2, cfg, evo)  # no displacing: nothing lands, and nothing is sent
+    for f in (tmp_path / "to-1").glob("*.npz"):
+        (tmp_path / "x" / "to-1" / f.name).write_bytes(f.read_bytes())
+    _, s = lost.exchange(b, 1)
+    assert s["prey_received"] == 0
+    b2, s = Transit(tmp_path, 1, 0, 0.0, 2, cfg, evo, displace=True).exchange(b, 1)
+    assert s["prey_received"] > 0 and (np.asarray(b2.env_state.prey.tag) == 1).sum() == s["prey_received"]
+    assert np.asarray(b2.env_state.prey.alive).all()
+
+
 def test_a_lost_cause_is_not_fatal_a_broken_file_waits(tmp_path):
     cfg, tcfg = tiny_configs("meadow")
     cfg = replace(cfg, size=12)

@@ -18,6 +18,8 @@ DASH_DIR = Path(__file__).resolve().parents[1] / "viz" / "dashboard"
 HOME = DASH_DIR / "home.html"
 ROADMAP = DASH_DIR / "roadmap.json"
 VIEWER = DASH_DIR / "world3d.html"  # the 3-D replay, with its three.js files in vendor/
+TRI = DASH_DIR / "tri.html"  # three replays side by side
+LIVE = DASH_DIR / "live.html"  # the phone viewer of runs in progress
 RUNNING_WITHIN_S = 15 * 60  # a run whose metrics changed this recently counts as running
 LAST_KEYS = ("update", "env_steps", "wall_s", "sps", "prey_alive", "pred_alive", "catches_per_step",
              "plant_cover", "prey_speed", "prey_sight", "prey_breed", "pred_speed", "pred_sight",
@@ -120,7 +122,7 @@ def build_site(runs_dir: Path) -> dict:
         part = dst.with_name(f"{dst.name}.{uuid.uuid4().hex}.tmp")  # trainers in containers can share this folder
         shutil.copy(src, part)
         part.replace(dst)
-    for src in (VIEWER, *sorted((DASH_DIR / "vendor").glob("*.js"))):
+    for src in (VIEWER, TRI, LIVE, *sorted((DASH_DIR / "vendor").glob("*.js"))):
         dst = runs_dir / src.relative_to(DASH_DIR)
         if dst.exists() and dst.stat().st_size == src.stat().st_size and dst.stat().st_mtime >= src.stat().st_mtime:
             continue  # vendor files are large and rarely change

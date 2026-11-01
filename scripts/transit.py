@@ -30,8 +30,8 @@ def _write_atomic(path: Path, **arrays) -> None:
 
 
 class Transit:
-    def __init__(self, directory, me: int, to: int, prob: float, strip: int, wcfg, world, seed: int = 0):
-        self.dir, self.me, self.to, self.prob, self.strip = Path(directory), me, to, prob, strip
+    def __init__(self, directory, me: int, to: int, prob: float, strip: int, wcfg, world, seed: int = 0, displace: bool = False):
+        self.dir, self.me, self.to, self.prob, self.strip, self.displace = Path(directory), me, to, prob, strip, displace
         self.cfg, self.world = wcfg, world
         self.rng = np.random.default_rng(seed + 977 * me)
         self.inbox, self.outbox = self.dir / f"to-{me}", self.dir / f"to-{to}"
@@ -94,8 +94,14 @@ class Transit:
             e = int(self.rng.integers(worlds))
             free = np.nonzero(~s["alive"][e] & ~arrived[e])[0]
             if free.size == 0:
-                continue  # that world is full: this migrant is lost, as it would be on arrival at a crowded shore
-            slot = int(free[0])
+                if not self.displace:
+                    continue  # that world is full: this migrant is lost, as it would be on arrival at a crowded shore
+                free = np.nonzero(~arrived[e])[0]  # or it takes the place of a resident (Stage 11b)
+                if free.size == 0:
+                    continue
+                slot = int(self.rng.choice(free))
+            else:
+                slot = int(free[0])
             s["pos"][e, slot] = (int(self.rng.integers(self.strip)), int(d[f"{k}_pos"][i, 1]) % self.cfg.size)
             s["energy"][e, slot] = d[f"{k}_energy"][i]
             s["genes"][e, slot] = d[f"{k}_genes"][i]

@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0d1117"><meta name="apple-mobile-web-app-capable" content="yes">
+<title>Worlds, live</title>
+<script type="importmap">{"imports":{"three":"./vendor/three.module.js"}}</script>
+<style>
+  :root{--fg:#e6edf3;--dim:#8b949e;--panel:rgba(22,27,34,.86);--brd:#30363d}
+  html,body{margin:0;height:100%;background:#0d1117;color:var(--fg);font:15px -apple-system,system-ui,sans-serif;overflow:hidden;touch-action:none;overscroll-behavior:none}
+  canvas#view{position:fixed;inset:0;width:100%;height:100%;display:block}
+  #top{position:fixed;left:0;right:0;top:0;padding:calc(env(safe-area-inset-top) + 8px) 12px 8px;background:linear-gradient(#0d1117ee,#0d111700);pointer-events:none}
+  #name{font-size:20px;font-weight:700}#sub{font-size:13px;color:var(--dim);margin-top:2px}
+  #dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#555;margin-right:6px;vertical-align:1px}
+  #dot.on{background:#3fb950;box-shadow:0 0 8px #3fb950}
+  #sheet{position:fixed;left:8px;right:8px;bottom:calc(env(safe-area-inset-bottom) + 62px);background:var(--panel);border:1px solid var(--brd);border-radius:12px;padding:10px 12px;backdrop-filter:blur(6px)}
+  .row{display:flex;justify-content:space-between;gap:10px;font-size:13px;margin:2px 0}.row b{font-weight:600}
+  .spark{display:block;width:100%;height:40px;margin:4px 0 2px}
+  #tabs{position:fixed;left:0;right:0;bottom:0;display:flex;gap:6px;padding:8px 8px calc(env(safe-area-inset-bottom) + 8px);background:#0d1117}
+  #tabs button{flex:1;height:44px;font:inherit;font-weight:600;color:var(--fg);background:#21262d;border:1px solid var(--brd);border-radius:10px}
+  #tabs button.on{background:#238636;border-color:#2ea043}
+  #all{position:fixed;left:0;right:0;top:calc(env(safe-area-inset-top) + 60px);bottom:calc(env(safe-area-inset-bottom) + 62px);overflow:auto;padding:0 10px;touch-action:pan-y;display:none}
+  .card{background:#161b22;border:1px solid var(--brd);border-radius:12px;padding:10px;margin-bottom:10px;display:flex;gap:10px}
+  .card canvas.map{width:96px;height:96px;flex:none;border-radius:6px;image-rendering:pixelated;background:#000}
+  .card .txt{flex:1;min-width:0}.card h3{margin:0 0 4px;font-size:16px}
+  #who{display:none}
+  #msg{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:30px;color:var(--dim);pointer-events:none}
+  #collapse{position:absolute;right:8px;top:4px;background:none;border:0;color:var(--dim);font-size:18px;padding:4px 8px}
+  #sheet.small .big{display:none}
+</style></head><body>
+<canvas id="view"></canvas>
+<div id="top"><div id="name">Worlds</div><div id="sub"><span id="dot"></span><span id="status">connecting…</span></div></div>
+<div id="all"></div>
+<div id="sheet"><button id="collapse" aria-label="show less">–</button>
+  <div class="big"><canvas class="spark" id="spark"></canvas></div>
+  <div class="row"><span>grazers <b id="g"></b></span><span>hunters <b id="h"></b></span><span>plants <b id="p"></b></span></div>
+  <div class="big">
+    <div class="row"><span>grazer sight <b id="gs"></b></span><span>speed <b id="gv"></b></span><span>breed <b id="gb"></b></span></div>
+    <div class="row"><span>hunter sight <b id="hs"></b></span><span>speed <b id="hv"></b></span><span>breed <b id="hb"></b></span></div>
+  </div>
+  <div id="who" class="row"></div>
+</div>
+<div id="tabs"></div>
+<div id="msg"></div>
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "./vendor/OrbitControls.js";
+const $ = (i) => document.getElementById(i), q = new URLSearchParams(location.search);
+const CLIMATES = {
+  meadow: { soil: [62, 46, 31], grass: [70, 170, 80], sky: 0x0d1117, name: "Meadow" },
+  forest: { soil: [28, 24, 18], grass: [34, 104, 58], sky: 0x070b0a, name: "Forest" },
+  tundra: { soil: [104, 112, 122], grass: [142, 158, 110], sky: 0x18202b, name: "Tundra" },
+};
+const WINTER = { soil: [176, 186, 198], grass: [150, 168, 172] };
+const b64 = (s) => { const b = atob(s), o = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) o[i] = b.charCodeAt(i); return o; };
+
+// ---------- worlds ----------
+let worlds = [], cur = -1;  // cur -1: the overview of all of them
+async function start() {
+  let runs = (q.get("runs") || "").split(",").filter(Boolean);
+  if (!runs.length) { try { runs = (await (await fetch("live_runs.json", { cache: "no-store" })).json()).runs; } catch {} }
+  if (!runs.length) { $("msg").textContent = "No live run right now. Start a run with --live-every."; return; }
+  worlds = runs.map((run) => ({ run, index: null, clips: [], clip: null, step: 0, seen: null, lastNew: 0, gap: 10000 }));
+  const tabs = $("tabs");
+  worlds.forEach((w, k) => { const b = document.createElement("button"); b.textContent = w.run; b.onclick = () => show(k); tabs.append(b); w.tab = b; });
+  const all = document.createElement("button"); all.textContent = "All"; all.onclick = () => show(-1); tabs.append(all); worlds.allTab = all;
+  worlds.forEach((w) => { const c = document.createElement("div"); c.className = "card"; c.innerHTML = `<canvas class="map" width="32" height="32"></canvas><div class="txt"><h3></h3><div class="row"><span>grazers <b class="g"></b></span><span>hunters <b class="h"></b></span></div><canvas class="spark"></canvas><div class="row"><span>grazer sight <b class="s"></b></span><span>hunter speed <b class="v"></b></span></div></div>`; c.onclick = () => show(worlds.indexOf(w)); $("all").append(c); w.card = c; });
+  show(worlds.length > 1 ? -1 : 0);
+  poll(); setInterval(poll, 3000);
+}
+async function poll() {
+  for (const w of worlds) {
+    try {
+      const ix = await (await fetch(`${w.run}/live/index.json`, { cache: "no-store" })).json();
+      w.index = ix; w.ok = true;
+      if (ix.latest !== w.seen) {
+        const c = decode(await (await fetch(`${w.run}/live/${ix.latest}`, { cache: "no-store" })).json());
+        const now = performance.now();
+        if (w.seen) w.gap = Math.min(30000, Math.max(3000, now - w.lastNew));
+        w.lastNew = now; w.seen = ix.latest; w.clips.push(c); if (w.clips.length > 2) w.clips.shift();
+        if (!w.clip) { w.clip = w.clips.shift(); w.step = 0; if (worlds[cur] === w) setWorld(w); }
+      }
+      const name = (CLIMATES[ix.climate] || {}).name || w.run;
+      w.tab.textContent = name; w.card.querySelector("h3").textContent = name; w.name = name;
+    } catch { w.ok = false; }
+  }
+  refresh();
+}
+function decode(d) {
+  const S = d.steps, kind = (k) => {
+    const p = d[k], n = p.n, on = b64(p.on);
+    return { n, x: new Int16Array(b64(p.x).buffer), y: new Int16Array(b64(p.y).buffer), e: b64(p.e), genes: b64(p.genes), slots: p.slots,
+             on: (t, i) => { const b = t * n + i; return (on[b >> 3] >> (7 - (b & 7))) & 1; } };
+  };
+  d.prey = kind("prey"); d.pred = kind("pred");
+  d.plants = d.plant.map(b64);
+  d.dens = { prey: new Uint16Array(b64(d.density.prey).buffer), pred: new Uint16Array(b64(d.density.pred).buffer) };
+  return d;
+}
+
+// ---------- scene ----------
+const renderer = new THREE.WebGLRenderer({ canvas: $("view"), antialias: devicePixelRatio < 2 });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0x0d1117); scene.fog = new THREE.Fog(0x0d1117, 80, 220);
+const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 600);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true; controls.maxPolarAngle = Math.PI * 0.47; controls.minDistance = 3; controls.maxDistance = 200;
+scene.add(new THREE.HemisphereLight(0xbfd8ff, 0x3a2a1a, 1.2));
+const sun = new THREE.DirectionalLight(0xfff1d6, 2.2); sun.position.set(40, 80, 30); scene.add(sun);
+const MAX = 1400, tmp = new THREE.Object3D(), m0 = new THREE.Matrix4(), m1 = new THREE.Matrix4(), col = new THREE.Color();
+const round = new THREE.SphereGeometry(1, 10, 8), legG = new THREE.CylinderGeometry(1, 0.7, 1, 5).translate(0, -0.5, 0), coneG = new THREE.ConeGeometry(1, 1, 6).translate(0, 0.5, 0);
+const mesh = (g, c, per = 1) => { const m = new THREE.InstancedMesh(g, new THREE.MeshStandardMaterial({ roughness: 0.55, color: c ?? 0xffffff }), MAX * per); m.frustumCulled = false; m.count = 0; scene.add(m); return m; };
+const PARTS = {
+  prey: { body: mesh(round.clone().scale(0.3, 0.25, 0.38)), head: mesh(round), eyes: mesh(round, 0x111111, 2), legs: mesh(legG, undefined, 4), snout: null },
+  pred: { body: mesh(round.clone().scale(0.22, 0.2, 0.42)), head: mesh(round), eyes: mesh(round, 0xffd24a, 2), legs: mesh(legG, undefined, 4), snout: mesh(coneG, 0x5a1414) },
+};
+for (const k of ["prey", "pred"]) { PARTS[k].eyes.count = 0; }
+let ground, gpx, gtex, grass;
+function buildGround(W) {
+  if (ground) { scene.remove(ground); ground.geometry.dispose(); scene.remove(grass); grass.dispose(); }
+  gpx = new Uint8Array(W * W * 4); gtex = new THREE.DataTexture(gpx, W, W); gtex.magFilter = THREE.NearestFilter; gtex.colorSpace = THREE.SRGBColorSpace;
+  const g = new THREE.PlaneGeometry(W, W); g.rotateX(-Math.PI / 2); g.translate(W / 2, 0, W / 2);
+  const uv = g.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setY(i, 1 - uv.getY(i));
+  ground = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ map: gtex, roughness: 0.95 })); scene.add(ground);
+  grass = new THREE.InstancedMesh(new THREE.ConeGeometry(0.3, 0.7, 4).translate(0, 0.35, 0), new THREE.MeshStandardMaterial({ roughness: 0.85 }), W * W);
+  grass.frustumCulled = false; scene.add(grass);
+  controls.target.set(W / 2, 0, W / 2); camera.position.set(W / 2, W * 0.42, W * 0.98);
+}
+let builtW = 0, frameIdx = -1, frameClip = null;
+function drawPlants(c, t) {
+  const pick = Math.min(c.plants.length - 1, Math.floor(t / 16));
+  const cold = c.winter_len && Math.floor((c.t0 + t) / c.winter_len) % 2 === 1;
+  const key = `${pick}:${cold}`;
+  if (frameClip === c && frameIdx === key) return;
+  frameClip = c; frameIdx = key;
+  const W = c.window, by = c.plants[pick], cl = CLIMATES[c.climate] || CLIMATES.meadow, pal = cold ? WINTER : cl;
+  let n = 0;
+  for (let i = 0; i < W * W; i++) {
+    const on = (by[i >> 3] >> (7 - (i & 7))) & 1, p = on ? pal.grass : pal.soil, f = on ? 0.55 : 1;
+    gpx[i * 4] = p[0] * f; gpx[i * 4 + 1] = p[1] * f; gpx[i * 4 + 2] = p[2] * f; gpx[i * 4 + 3] = 255;
+    if (on) { const x = i % W, y = Math.floor(i / W); tmp.position.set(x + 0.5, 0, y + 0.5); tmp.rotation.set(0, i * 2.4, 0); tmp.scale.setScalar(1); tmp.updateMatrix(); grass.setMatrixAt(n, tmp.matrix); grass.setColorAt(n, col.setRGB(p[0] / 255, p[1] / 255, p[2] / 255, THREE.SRGBColorSpace)); n++; }
+  }
+  grass.count = n; grass.instanceMatrix.needsUpdate = true; if (grass.instanceColor) grass.instanceColor.needsUpdate = true; gtex.needsUpdate = true;
+}
+const place = (mesh, n, base, x, y, z, sx, sy, sz, tilt) => { tmp.position.set(x, y, z); tmp.rotation.set(tilt || 0, 0, 0); tmp.scale.set(sx, sy, sz); tmp.updateMatrix(); m1.multiplyMatrices(base, tmp.matrix); mesh.setMatrixAt(n, m1); };
+const wrap = (d, N) => ((d + N / 2) % N + N) % N - N / 2;
+let picked = null;  // {kind, slot}
+const uidsAt = { prey: [], pred: [] };
+function drawKind(c, kind, t, f, viewW) {
+  const k = c[kind], P = PARTS[kind], N = c.size, W = c.window, T = c.steps, list = uidsAt[kind];
+  list.length = 0; let n = 0, e = 0, l = 0;
+  for (let i = 0; i < k.n && n < MAX; i++) {
+    if (!k.on(t, i)) continue;
+    const j = t * k.n + i, t1 = Math.min(t + 1, T - 1), j1 = t1 * k.n + i;
+    const x0 = k.x[j], y0 = k.y[j], dx = k.on(t1, i) ? wrap(k.x[j1] - x0, N) : 0, dy = k.on(t1, i) ? wrap(k.y[j1] - y0, N) : 0;
+    const x = x0 + dx * f, y = y0 + dy * f;
+    if (x < -0.5 || y < -0.5 || x > W - 0.5 || y > W - 0.5) continue;
+    const speed = k.genes[i * 4] / 255, sight = k.genes[i * 4 + 1] / 255, size = k.genes[i * 4 + 3] / 255;
+    const yaw = dx || dy ? Math.atan2(dx, dy) : (k.yaw ??= {})[i] ?? 0; (k.yaw ??= {})[i] = yaw;
+    const legLen = 0.2 + 0.32 * speed, s = 0.8 + 0.5 * size, moving = dx || dy;
+    const fat = 0.85 + 0.35 * Math.min(k.e[j] / (kind === "prey" ? 40 : 60), 1);
+    tmp.position.set(x + 0.5, 0, y + 0.5); tmp.rotation.set(0, yaw, 0); tmp.scale.set(s * fat, s, s); tmp.updateMatrix(); m0.copy(tmp.matrix);
+    m1.makeTranslation(0, legLen + 0.12, 0).premultiply(m0); P.body.setMatrixAt(n, m1);
+    const v = 0.45 + 0.55 * speed;
+    const c1 = kind === "prey" ? col.setRGB(v, v, v + 0.02, THREE.SRGBColorSpace) : col.setRGB(v, 0.12 + 0.2 * speed, 0.12 + 0.2 * speed, THREE.SRGBColorSpace);
+    if (picked && picked.kind === kind && picked.slot === k.slots[i]) { c1.setRGB(1, 0.75, 0.1, THREE.SRGBColorSpace); picked.at = [x + 0.5, y + 0.5, k.e[j], speed, sight, k.genes[i * 4 + 2] / 255]; }
+    P.body.setColorAt(n, c1);
+    const hz = kind === "prey" ? 0.42 : 0.46;
+    place(P.head, n, m0, 0, legLen + 0.2, hz, kind === "prey" ? 0.17 : 0.14, 0.16, 0.19); P.head.setColorAt(n, c1);
+    const r = (kind === "prey" ? 0.05 : 0.04) * (0.75 + 1.1 * sight);
+    place(P.eyes, e++, m0, -0.11, legLen + 0.25, hz + 0.13, r, r, r); place(P.eyes, e++, m0, 0.11, legLen + 0.25, hz + 0.13, r, r, r);
+    if (P.snout) place(P.snout, n, m0, 0, legLen + 0.16, 0.56, 0.08, 0.26, 0.07, 1.57);
+    const sw = moving ? Math.sin((c.t0 + t + f) * 6.28 * (1 + speed) + i) * 0.65 : 0;
+    for (const [lx, lz, sgn] of [[-0.16, 0.24, 1], [0.16, 0.24, -1], [-0.16, -0.24, -1], [0.16, -0.24, 1]]) { place(P.legs, l, m0, lx, legLen, lz, 0.045, legLen, 0.045, sw * sgn); P.legs.setColorAt(l, c1); l++; }
+    list.push(k.slots[i]); n++;
+  }
+  for (const part of [P.body, P.head, P.snout]) if (part) { part.count = n; part.instanceMatrix.needsUpdate = true; if (part.instanceColor) part.instanceColor.needsUpdate = true; }
+  P.eyes.count = e; P.eyes.instanceMatrix.needsUpdate = true;
+  P.legs.count = l; P.legs.instanceMatrix.needsUpdate = true; if (P.legs.instanceColor) P.legs.instanceColor.needsUpdate = true;
+}
+
+// ---------- pages ----------
+function setWorld(w) {
+  const c = w.clip; if (!c) return;
+  if (c.window !== builtW) { buildGround(c.window); builtW = c.window; }
+  const cl = CLIMATES[c.climate] || CLIMATES.meadow; scene.background.set(cl.sky); scene.fog.color.set(cl.sky); frameClip = null;
+}
+function show(k) {
+  cur = k; picked = null; $("who").style.display = "none";
+  worlds.forEach((w, i) => w.tab.classList.toggle("on", i === k));
+  [...$("tabs").children].at(-1).classList.toggle("on", k === -1);
+  $("all").style.display = k === -1 ? "block" : "none"; $("sheet").style.display = k === -1 ? "none" : "block"; $("view").style.visibility = k === -1 ? "hidden" : "visible";
+  if (k >= 0 && worlds[k].clip) setWorld(worlds[k]);
+  refresh();
+}
+const fmt = (v) => (v === undefined ? "–" : v.toFixed ? (Number.isInteger(v) ? String(v) : v.toFixed(2)) : v);
+function spark(cv, hist, keys) {
+  if (!hist || !hist.length) return;
+  const r = cv.getBoundingClientRect(), W = cv.width = r.width * devicePixelRatio, H = cv.height = r.height * devicePixelRatio, g = cv.getContext("2d");
+  g.clearRect(0, 0, W, H);
+  for (const [key, colour] of keys) {
+    const vals = hist.map((s) => s[key] || 0), hi = Math.max(1, ...vals); g.strokeStyle = colour; g.lineWidth = 2 * devicePixelRatio; g.beginPath();
+    vals.forEach((v, i) => { const x = (i / Math.max(1, vals.length - 1)) * W, y = H - 2 - (v / hi) * (H - 4); i ? g.lineTo(x, y) : g.moveTo(x, y); }); g.stroke();
+  }
+}
+function refresh() {
+  for (const w of worlds) {
+    const s = w.index && w.index.history.at(-1); if (!s || !w.card) continue;
+    w.card.querySelector(".g").textContent = s.grazers; w.card.querySelector(".h").textContent = s.hunters;
+    w.card.querySelector(".s").textContent = fmt(s.grazer_sight); w.card.querySelector(".v").textContent = fmt(s.hunter_speed);
+    if (cur === -1) spark(w.card.querySelector(".spark"), w.index.history, [["grazers", "#e6edf3"], ["hunters", "#e5484d"]]);
+    if (w.clip) { const cv = w.card.querySelector(".map"), g = cv.getContext("2d"), G = w.clip.grid, im = g.createImageData(G, G), a = w.clip.dens.prey, b = w.clip.dens.pred, ha = Math.max(1, ...a), hb = Math.max(1, ...b);
+      for (let i = 0; i < G * G; i++) { const u = a[i] / ha, v = b[i] / hb; im.data.set([40 + 215 * v, 40 + 180 * u, 40 + 180 * u, 255], i * 4); } g.putImageData(im, 0, 0); }
+  }
+  const w = worlds[cur];
+  if (!w) { $("name").textContent = "All worlds"; const live = worlds.filter((x) => x.ok).length; $("status").textContent = `${live} of ${worlds.length} reporting`; $("dot").className = live ? "on" : ""; return; }
+  $("name").textContent = w.name || w.run;
+  const s = w.index && w.index.history.at(-1), fresh = w.lastNew && performance.now() - w.lastNew < 60000;
+  $("dot").className = fresh ? "on" : "";
+  $("status").textContent = s ? `update ${s.update} · ${fresh ? "live" : "waiting for the next clip"}` : "connecting…";
+  if (s) { $("g").textContent = s.grazers; $("h").textContent = s.hunters; $("p").textContent = `${Math.round(s.plants * 100)}%`;
+    $("gs").textContent = fmt(s.grazer_sight); $("gv").textContent = fmt(s.grazer_speed); $("gb").textContent = fmt(s.grazer_breed);
+    $("hs").textContent = fmt(s.hunter_sight); $("hv").textContent = fmt(s.hunter_speed); $("hb").textContent = fmt(s.hunter_breed);
+    spark($("spark"), w.index.history, [["grazers", "#e6edf3"], ["hunters", "#e5484d"]]); }
+}
+$("collapse").onclick = () => { const small = $("sheet").classList.toggle("small"); $("collapse").textContent = small ? "+" : "–"; refresh(); };
+// Tap an animal to follow it.
+const ray = new THREE.Raycaster(), ptr = new THREE.Vector2(); let downAt = null;
+$("view").addEventListener("pointerdown", (e) => { downAt = [e.clientX, e.clientY]; });
+$("view").addEventListener("pointerup", (e) => {
+  if (!downAt || Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) > 8) return;
+  ptr.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1); ray.setFromCamera(ptr, camera);
+  for (const k of ["prey", "pred"]) PARTS[k].body.boundingSphere = null;
+  const hit = ray.intersectObjects([PARTS.prey.body, PARTS.pred.body])[0];
+  if (hit) { const kind = hit.object === PARTS.prey.body ? "prey" : "pred"; picked = { kind, slot: uidsAt[kind][hit.instanceId] }; }
+  else picked = null;
+  $("who").style.display = picked ? "flex" : "none";
+});
+function resize() { renderer.setSize(innerWidth, innerHeight, false); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); }
+addEventListener("resize", resize); resize();
+let last = performance.now();
+function loop(now) {
+  requestAnimationFrame(loop);
+  const dt = (now - last) / 1000; last = now;
+  for (const w of worlds) {  // keep every world playing, so a tab change lands in the present
+    if (!w.clip) continue;
+    const rate = w.clip.steps / (w.gap / 1000 * 0.98);  // stretch a clip to last until the next one
+    w.step += dt * Math.max(2, Math.min(16, rate));
+    if (w.step >= w.clip.steps - 1) {
+      if (w.clips.length) { w.clip = w.clips.shift(); w.step = 0; if (worlds[cur] === w) { setWorld(w); if (picked) { picked = null; $("who").style.display = "none"; } } }
+      else w.step = w.clip.steps - 1.001;
+    }
+  }
+  const w = worlds[cur];
+  if (!w || !w.clip) return;
+  const t = Math.floor(w.step), f = w.step - t;
+  drawPlants(w.clip, t); drawKind(w.clip, "prey", t, f); drawKind(w.clip, "pred", t, f);
+  if (picked && picked.at) {
+    const [x, y, e, sp, si, br] = picked.at, target = new THREE.Vector3(x, 0, y), d = target.clone().sub(controls.target).multiplyScalar(0.06); controls.target.add(d); camera.position.add(d);
+    $("who").innerHTML = `<span>${picked.kind === "prey" ? "Grazer" : "Hunter"} energy <b>${e}</b></span><span>speed <b>${sp.toFixed(2)}</b></span><span>sight <b>${si.toFixed(2)}</b></span><span>breed <b>${br.toFixed(2)}</b></span>`;
+  }
+  controls.update(); renderer.render(scene, camera);
+}
+requestAnimationFrame(loop);
+start();
+window.__live = { worlds: () => worlds, show };
+</script></body></html>

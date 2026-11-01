@@ -89,6 +89,10 @@ def parse_args(argv):
     p.add_argument("--league-frac", type=float, default=0.25, help="worlds per side facing a past brain")
     p.add_argument("--sample-frac", type=float, default=1.0,
                    help="share of agent-slots each update learns from, living animals first")
+    p.add_argument("--live-every", type=int, default=0, help="publish a clip for the phone viewer every this many updates; 0 is off")
+    p.add_argument("--live-window", type=int, default=96, help="cells per side of the part of the map a clip shows")
+    p.add_argument("--transit-displace", action="store_true", help="a migrant reaching a full world replaces a resident")
+    p.add_argument("--min-update-seconds", type=float, default=0.0, help="wait so an update takes at least this long, to keep trainers on different machines in step")
     p.add_argument("--transit-dir", help="Stage 11a: folder for animals crossing between continents")
     p.add_argument("--transit-me", type=int, default=0, help="this continent's number")
     p.add_argument("--transit-to", type=int, default=0, help="the continent to the east")
@@ -154,8 +158,12 @@ def main(argv=None) -> int:
     crossing = None
     if args.transit_dir:  # Stage 11a: animals cross to the next continent between updates
         from scripts.transit import Transit, log_row
-        crossing = Transit(args.transit_dir, args.transit_me, args.transit_to, args.transit_prob, args.transit_strip, wcfg, world, tcfg.seed)
+        crossing = Transit(args.transit_dir, args.transit_me, args.transit_to, args.transit_prob, args.transit_strip, wcfg, world, tcfg.seed, args.transit_displace)
         crossing_log = open(run_dir / "transit.jsonl", "a")
+    feed = None
+    if args.live_every:  # short clips for the phone viewer, while this run trains
+        from scripts.live import LiveFeed
+        feed = LiveFeed(run_dir, wcfg, world, trainer.net, args.live_every, seed=tcfg.seed, window=args.live_window)
     start = time.time()
     env_steps = 0
     reason, update = "updates", 0
@@ -182,6 +190,11 @@ def main(argv=None) -> int:
             if crossing is not None:
                 runner, crossed = crossing.exchange(runner, update)
                 log_row(crossing_log, update, crossed)
+            if feed is not None:
+                try:
+                    feed.publish(runner, update, crossed if crossing is not None else None)
+                except OSError as e:  # a viewer's feed is never worth stopping a run for
+                    print(f"live feed: {e}", file=sys.stderr, flush=True)
 
             if update == 1:
                 ok, msg = check_memory(jax.devices()[0].memory_stats(), args.mem_limit_gb)
@@ -215,6 +228,8 @@ def main(argv=None) -> int:
                       f"catches/step {metrics['catches_per_step']:.3f}", flush=True)
             if last:
                 break
+            if args.min_update_seconds:
+                time.sleep(max(0.0, args.min_update_seconds - (time.time() - t0)))
     finish(run_dir, reason, update, env_steps, time.time() - start)
     print("done", flush=True)
     return 0
