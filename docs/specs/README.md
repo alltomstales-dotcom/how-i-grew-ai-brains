@@ -49,6 +49,7 @@ replaced with neutral wording; the engineering and the results are unchanged.
 | [Camouflage price](2026-11-01-camouflage-price-design.md) | 13b: a valley, and what camouflage can cost | FAIL on the valley; cheaper camouflage evolves and lasts |
 | [Camouflage and climate](2026-11-01-camouflage-climate-design.md) | 13c: does camouflage follow climate? | FAIL on two of three bars; it spreads in the walking order on both sets |
 | [Transplant](2026-11-01-transplant-design.md) | 13d: are brains better at their own climate? | FAIL on both bars; a one-way effect in hunters |
+| [No crossing](2026-11-01-no-crossing-design.md) | 13e: does camouflage really travel between continents? | PASS: tundra never gets there alone |
 
 The league and predator-stall work of Stage 3b is written up in the [roadmap](../roadmap.md).
 A summary of all of it is in [results.md](../results.md).

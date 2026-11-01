@@ -303,6 +303,8 @@ share beats the other's by at least 0.10, and beats its own at 0-10 steps by at 
 
 **Stage 13d, are brains better at their own climate? (FAIL on both bars, 2026-11-01).** Tom's question. Training is repeatable: a same-climate brain from another run hunts within a few percent of the home brain. In tundra, tundra-trained hunters beat meadow-trained ones by 9% to 22% on all four targets, but meadow shows no steady home advantage, and grazers show none. So climate shapes bodies far more clearly than brains. Spec: `docs/specs/2026-11-01-transplant-design.md`.
 
+**Stage 13e, does camouflage really travel between continents? (PASS, 2026-11-01).** With no crossing, meadow still gets there (updates 83 and 38), and tundra never does in 600 updates on either set (0.086, 0.140), and its worlds die. With crossing, tundra's hunters reach about 0.90. So a continent ended up with a trait it didn't reach alone. Lineages aren't traced, and crossing rescued tundra's worlds on only one set of two. Spec: `docs/specs/2026-11-01-no-crossing-design.md`.
+
 ### Stage 8: toward realism
 
 - **Physics.** Move to continuous 2-D, then 3-D, physics in JAX (Brax or MuJoCo MJX), which keeps
