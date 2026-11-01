@@ -289,7 +289,7 @@ share beats the other's by at least 0.10, and beats its own at 0-10 steps by at 
 
 **Stage 12f, can a big enough meal carry the race? (PASS, 2026-11-01).** Meals of 50 last in 0.980 and 0.945 of worlds, and meals of 70 in 0.996 and 0.988, against 0.176 and 0.008 at 37. It's the first world where size decides catches and both species last, with hunters still ahead of the chaser. Both species run to the top of the size range and sit near their caps. Spec: `docs/specs/2026-11-01-price-of-the-race-design.md`.
 
-**Stage 12g, with a race that lasts, does size follow climate? (built 2026-11-01, training).** Stage 12a's question and bars, on the three continents, at meals of 50. Spec: `docs/specs/2026-11-01-feast-continents-design.md`.
+**Stage 12g, with a race that lasts, does size follow climate? (FAIL on one number, 2026-11-01).** Grazer size follows climate strongly on both sets: meadow 0.89 and 0.90, forest 0.23 and 0.33, tundra 0.13 and 0.15, the opposite of my guess, and hunter size takes the same order. Meadow lasts in every world, and tundra in 0.344 and 0.875, which misses the bar of 0.5 on one set. Forest's hunters are carried by arrivals. Why tundra's grazers end up small isn't tested. Spec: `docs/specs/2026-11-01-feast-continents-design.md`.
 
 ### Stage 8: toward realism
 

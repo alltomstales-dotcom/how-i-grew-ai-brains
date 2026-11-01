@@ -27,3 +27,12 @@ def test_old_clips_are_removed(tmp_path):
     import scripts.train as train
     assert train.main(["--tiny", "--runs-dir", str(tmp_path), "--updates", str(live.KEEP + 3), "--world", "lasting_stealth", "--run-id", "a", "--live-every", "1", "--live-window", "8"]) == 0
     assert len(list((tmp_path / "a" / "live").glob("clip_*.json"))) == live.KEEP
+
+
+def test_no_clips_trains_without_rendering(tmp_path):
+    import scripts.train as train
+    common = ["--tiny", "--runs-dir", str(tmp_path), "--updates", "2"]
+    assert train.main([*common, "--world", "ambush", "--run-id", "n1", "--no-clips"]) == 0
+    assert (tmp_path / "n1" / "metrics.jsonl").stat().st_size > 0
+    assert not list((tmp_path / "n1" / "clips").glob("*.mp4"))
+

@@ -87,10 +87,10 @@ across climates, and tundra's seasons drive a real predator and prey cycle. Fore
 few descendants, and [that measure was flawed](docs/specs/2026-10-31-lineage-design.md). Measured properly, up to 96% of tundra's
 grazers descend from arrivals, and their sight still stays low, so climate's differences hold against heavy migration.
 Then we [made size matter](docs/specs/2026-10-31-bulk-design.md), and hunters collapsed on all three, in meadow and tundra at
-bodies far bigger than their prey's. [Finding out why](docs/specs/2026-11-01-burn-or-race-design.md) proved several of our guesses wrong and pointed at an arms race. [Bigger meals carry it](docs/specs/2026-11-01-price-of-the-race-design.md), and we're [back on the continents](docs/specs/2026-11-01-feast-continents-design.md) to ask the first question again.
+bodies far bigger than their prey's. [Finding out why](docs/specs/2026-11-01-burn-or-race-design.md) proved several of our guesses wrong and pointed at an arms race. [Bigger meals carry it](docs/specs/2026-11-01-price-of-the-race-design.md), and [back on the continents](docs/specs/2026-11-01-feast-continents-design.md) size follows climate: meadow's grazers grow to about 0.90 and tundra's fall to about 0.14, the opposite of our guess.
 [What would you change?](SUGGESTIONS.md)
 
-**So far, [11 stages pass and 26 fail](docs/results.md).** The failures have often taught more than the passes.
+**So far, [11 stages pass and 27 fail](docs/results.md).** The failures have often taught more than the passes.
 
 ## Watch it
 

@@ -89,6 +89,7 @@ def parse_args(argv):
     p.add_argument("--league-frac", type=float, default=0.25, help="worlds per side facing a past brain")
     p.add_argument("--sample-frac", type=float, default=1.0,
                    help="share of agent-slots each update learns from, living animals first")
+    p.add_argument("--no-clips", action="store_true", help="skip the checkpoint clips: a 256 x 256 map holds about 10 GB of frames for each")
     p.add_argument("--live-every", type=int, default=0, help="publish a clip for the phone viewer every this many updates; 0 is off")
     p.add_argument("--live-window", type=int, default=96, help="cells per side of the part of the map a clip shows")
     p.add_argument("--transit-displace", action="store_true", help="a migrant reaching a full world replaces a resident")
@@ -139,6 +140,8 @@ def main(argv=None) -> int:
     evolving = hasattr(world, "gene_pool")
 
     def add_clip(name, update, env_steps, prey_pi, pred_pi, label, init_state=None):
+        if args.no_clips:
+            return
         frames = write_clip(wcfg, prey_pi, pred_pi, jax.random.PRNGKey(CLIP_SEED),
                             run_dir / "clips" / name, label=label, world=world, init_state=init_state)
         clips.append({"file": f"clips/{name}", "update": update, "env_steps": env_steps,
