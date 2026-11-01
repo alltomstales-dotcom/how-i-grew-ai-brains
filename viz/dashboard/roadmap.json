@@ -1,6 +1,6 @@
 {
  "title": "autolearn — growing intelligence in simulated worlds",
- "updated": "2026-10-30",
+ "updated": "2026-11-01",
  "summary": "Animals learn by trial and error (reinforcement learning) and their bodies evolve, in worlds that run entirely on a DGX Spark's GPU. Nobody programs hunting, fleeing or foraging. We set the rules of the world and the goal (stay alive, have offspring), then watch what emerges.",
  "explainer": [
   "Inspiration: David Silver and Lasse Espeholt's 'Crucible' idea. Instead of learning from human data, agents learn from experience in a simulated world, so they can, in principle, keep improving without limit.",
@@ -9,7 +9,7 @@
   "Speed: the world, the brains and the learning are all compiled together in JAX. 1,024 worlds run in parallel on one GPU, at about 5,200 world-steps per second while learning and about 19,000 without it.",
   "Honesty: every stage has a test that can fail. Each test compares against controls, such as random brains, founder bodies or one gene changed at a time, so a pass means something."
  ],
- "now": "Stage 6c passes on two seeds: in the flank world, learned predators catch 3.0-3.8 times as often as lone chasers, the clearest sign of intelligence so far. Stage 7a (brain size as a gene) is closed as a FAIL with a finding: the brain an animal keeps follows how much it eats, not how much thinking pays. Next under discussion: a fixed benchmark that scores every new brain on the same tests, and one brain carried forward across stages.",
+ "now": "Stage 14c is running: does inheriting what was learned build up over about 350 generations? So far, individual brains hold up, learning in life barely helps, and Lamarckian inheritance does harm. Next, from a review of the biology (docs/specs/2026-11-01-memory-and-inheritance-review.md): a camouflage gene expressed only in winter (15a), a season input (15b), environmental mutation (15c), culture (16), and a compressed genome with evolved learning rules (17).",
  "stages": [
   {
    "id": 1,
@@ -135,6 +135,11 @@
     "14a, individual brains that descendants inherit: FAIL. Learning in life barely helps, and Lamarckian inheritance does harm, most in winter (0.516, 0.547)",
     "14b, does evolution keep learning? FAIL on bar 2: evolution turns it down, and worlds don't fully recover (0.531, 0.797)",
     "14c, does inherited knowledge build up, given time? About 350 generations (training)",
+    "15a, conditional expression: a camouflage gene expressed only in winter. Can tundra evolve it alone? (planned)",
+    "15b, a season input: does knowing the season reduce Lamarckian harm in winter? (planned)",
+    "15c, environmental mutation: rising by place, season or a parent's hunger, against controls with the same average (planned)",
+    "16, culture: juveniles learn from a parent, with no weights inherited (planned)",
+    "17, a compressed genome decoded into a brain, with evolved learning rules (planned)",
     "A food web: mid-predators and scavengers (Stage 5b)",
     "Maps of 128-256 cells, sharded across the GB10",
     "Armour and camouflage genes"

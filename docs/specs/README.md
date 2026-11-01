@@ -53,6 +53,7 @@ replaced with neutral wording; the engineering and the results are unchanged.
 | [Individual brains](2026-11-01-individual-brains-design.md) | 14a: individual brains that descendants inherit | FAIL, and Lamarckian inheritance does harm |
 | [Heritable learning](2026-11-01-heritable-learning-design.md) | 14b: does evolution keep learning? | FAIL on the rescue; the rate does fall |
 | [Long inheritance](2026-11-01-long-inheritance-design.md) | 14c: does inherited knowledge build up, given time? | training |
+| [Genes, memory and learning](2026-11-01-memory-and-inheritance-review.md) | A review of the biology, and the plan after 14c | not a test: a review with references |
 
 The league and predator-stall work of Stage 3b is written up in the [roadmap](../roadmap.md).
 A summary of all of it is in [results.md](../results.md).
