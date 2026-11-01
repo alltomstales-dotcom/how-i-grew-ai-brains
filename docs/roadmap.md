@@ -291,6 +291,14 @@ share beats the other's by at least 0.10, and beats its own at 0-10 steps by at 
 
 **Stage 12g, with a race that lasts, does size follow climate? (FAIL on one number, 2026-11-01).** Grazer size follows climate strongly on both sets: meadow 0.89 and 0.90, forest 0.23 and 0.33, tundra 0.13 and 0.15, the opposite of my guess, and hunter size takes the same order. Meadow lasts in every world, and tundra in 0.344 and 0.875, which misses the bar of 0.5 on one set. Forest's hunters are carried by arrivals. Why tundra's grazers end up small isn't tested. Spec: `docs/specs/2026-11-01-feast-continents-design.md`.
 
+**Stage 12h, why do tundra's grazers end up small? (PASS, 2026-11-01).** Winter shrinks grazers from 0.91 to 0.12 on both seeds in the small map, and with their size free they stay at 0.93. So winter plus upkeep is enough to explain it, with no crossing and no big map. Worlds also last far better with big grazers (0.934, 0.844 against 0.098, 0.098). Spec: `docs/specs/2026-11-01-small-in-winter-design.md`.
+
+**Stage 12i, do winter's worlds fade because small grazers are small meals? (PASS, 2026-11-01).** With every meal a flat 71 and grazers just as small (0.12), worlds go from 0.098 to 1.000 on both seeds. But the fixed chaser now beats learned hunters (1.15x, 1.05x), so generous food costs hunting skill. Spec: `docs/specs/2026-11-01-small-meals-design.md`.
+
+**Stage 13a, can camouflage evolve? (FAIL on two of four bars, 2026-11-01).** Free, it evolves quickly from hunters that hide nothing (0.94 on both seeds) and lasts about as well as my hand-set rule (0.746, 0.973). At a price of 0.25, the seeds split: 0.079 and 0.939, lasting in 0.000 and 0.172. Spec: `docs/specs/2026-11-01-camouflage-gene-design.md`.
+
+**Stage 13b, a valley, and what camouflage can cost (built 2026-11-01, training).** Founders just past the first step at the same price, and prices of 0.10 and 0.05. Spec: `docs/specs/2026-11-01-camouflage-price-design.md`.
+
 ### Stage 8: toward realism
 
 - **Physics.** Move to continuous 2-D, then 3-D, physics in JAX (Brax or MuJoCo MJX), which keeps

@@ -22,7 +22,7 @@ from simulations.predprey import NUM_ACTIONS, WorldConfig  # noqa: F401  (re-exp
 OBS_CHANNELS = 11  # plant, toughness, prey, predators | own energy, speed, sight, breed | wall, burrow | own size
 PREY_CHANNEL = 2  # where prey show up in an observation
 WALL, BURROW = 1, 2  # State.terrain codes; 0 is open ground
-ANIMAL_GENES = 6  # speed, sight, breed, size, brain, diet
+ANIMAL_GENES = 7  # speed, sight, breed, size, brain, diet, camo
 PLANT_GENES = 2  # spread, toughness
 # (dx, dy) to the four neighbours a plant can seed: north, south, east, west.
 NEIGHBOURS = ((0, -1), (0, 1), (1, 0), (-1, 0))
@@ -39,11 +39,12 @@ class EvoConfig(WorldConfig):
     breed_span: float = 0.8  # threshold repro * (0.5 + span * b) stays below the energy cap
     gene_sigma: float = 0.05
     founder_noise: float = 0.05
-    founder_animal: tuple = (0.2, 0.5, 0.5, 0.5, 0.5, 0.5)  # speed, sight, breed, size, brain, diet
+    founder_animal: tuple = (0.2, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5)  # speed, sight, breed, size, brain, diet, camo
     founder_plant: tuple = (0.5, 0.2)
     speed_cost: float = 1.0
     pred_speed_cost: float = -1.0  # what speed costs hunters; < 0 = speed_cost (Stage 10e)
     pred_size_cost: float = -1.0  # what size costs hunters; < 0 = size_cost (Stage 12e)
+    prey_size_cost: float = -1.0  # what size costs grazers; < 0 = size_cost (Stage 12h)
     sight_cost: float = 0.5
     seed_rate: float = 0.03  # 0.2 left food plentiful and prey stuck at the slot cap
     tough_seed_cost: float = 0.8
@@ -101,6 +102,8 @@ class EvoConfig(WorldConfig):
     plant_digest: float = 1.0  # how much of a grazer's plant meal a hunter with diet 0 gets
     diet_fixed: bool = False  # the control: every hunter gets 0.5 of each, whatever its gene says
     stealth_radius: int = 0  # > 0: a grazer sees a hunter only within this many cells (Stage 10f)
+    camo_gene: bool = False  # a grazer sees a hunter only within camo_radius of that hunter's gene (Stage 13a)
+    camo_cost: float = 0.0  # energy per step for a hunter's camo gene 1
     fat_sense: bool = False  # animals can see how much energy visible prey hold (Stage 5b)
     stored_meals: bool = False  # a catch is worth what the prey stored, times meal_share, not a fixed catch_energy (Stage 5b)
     meal_share: float = 1.25  # meant to match catch_energy 25 with prey at about 20; prey eaten held about 9.5, so about 12 (5b v1)
@@ -426,6 +429,61 @@ class BulkFeastForestConfig(BulkForestConfig):
 class BulkFeastTundraConfig(BulkTundraConfig):
     catch_energy: float = 50.0
     pred_energy_cap: float = 170.0
+
+
+@dataclass(frozen=True)
+class BulkWinterConfig(BulkFeast50Config):
+    """Stage 12h: the race that lasts, with tundra's winter. Do grazers end up small, as in tundra?"""
+    winter_len: int = 60
+
+
+@dataclass(frozen=True)
+class BulkWinterFreeConfig(BulkWinterConfig):
+    """Stage 12h: the same, with size free for grazers."""
+    prey_size_cost: float = 0.0
+
+
+@dataclass(frozen=True)
+class BulkWinterFlatConfig(BulkWinterConfig):
+    """Stage 12i: winter, with every meal worth what a big grazer is, whatever the grazer's size."""
+    catch_energy: float = 71.0
+    flat_meals: bool = True
+
+
+@dataclass(frozen=True)
+class CamoNeutralConfig(LastingConfig):
+    """Stage 13a's control: founders hide nothing, and the gene does nothing, so what happens to it is drift."""
+    founder_animal: tuple = (0.2, 0.5, 0.5, 0.5, 0.5, 0.5, 0.1)
+
+
+@dataclass(frozen=True)
+class CamoFreeConfig(CamoNeutralConfig):
+    """Stage 13a: the gene works, and costs nothing."""
+    camo_gene: bool = True
+
+
+@dataclass(frozen=True)
+class CamoConfig(CamoFreeConfig):
+    """Stage 13a: the gene works, at a price."""
+    camo_cost: float = 0.25
+
+
+@dataclass(frozen=True)
+class CamoStartConfig(CamoConfig):
+    """Stage 13b: stage 13a's price, with founders just past the first step in the camouflage radius."""
+    founder_animal: tuple = (0.2, 0.5, 0.5, 0.5, 0.5, 0.5, 0.2)
+
+
+@dataclass(frozen=True)
+class Camo10Config(CamoConfig):
+    """Stage 13b: camouflage at 0.10."""
+    camo_cost: float = 0.10
+
+
+@dataclass(frozen=True)
+class Camo05Config(CamoConfig):
+    """Stage 13b: camouflage at 0.05."""
+    camo_cost: float = 0.05
 
 
 @dataclass(frozen=True)
@@ -801,6 +859,14 @@ def _climb(cfg: EvoConfig, before: Species, after: Species) -> Species:
     return after._replace(energy=after.energy - cfg.climb_cost * up * after.alive)
 
 
+CAMO_RADII = (1, 2, 3, 4)
+
+
+def camo_radius(g):
+    """How close a grazer must be to see a hunter with this camo gene: 4 cells at gene 0, the next cell from about 0.83."""
+    return 4 - jnp.floor(3 * jnp.asarray(g) + 0.5).astype(jnp.int32)
+
+
 def observe(cfg: EvoConfig, state: State) -> tuple[jax.Array, jax.Array]:
     maps = jnp.stack(
         [
@@ -823,8 +889,17 @@ def observe(cfg: EvoConfig, state: State) -> tuple[jax.Array, jax.Array]:
     fat = (jnp.zeros((cfg.size, cfg.size), jnp.float32).at[state.prey.pos[:, 1], state.prey.pos[:, 0]]
            .add(state.prey.energy * state.prey.alive / cfg.prey_energy_cap))[..., None] if cfg.fat_sense else None
 
+    if cfg.camo_gene:  # one map of hunters for each radius they show from
+        hunter_radius = camo_radius(state.pred.genes[:, 6])
+        by_radius = jnp.stack([pp._count_map(state.pred._replace(alive=state.pred.alive & (hunter_radius == r)), cfg.size)
+                               for r in CAMO_RADII], axis=-1)
+
     def one(sp: Species, cap: float, kind: str) -> jax.Array:
         w = pp._windows(maps, sp.pos, cfg.view, cfg.size)
+        if cfg.camo_gene and kind == "prey":
+            shown = pp._windows(by_radius, sp.pos, cfg.view, cfg.size)
+            near = cheb[None, ..., None] <= jnp.asarray(CAMO_RADII)[None, None, None, :]
+            w = w.at[..., 3].set(jnp.sum(shown * near, axis=-1))
         radius = jnp.where(is_night(cfg, state.t), 1, sight_radius(sp.genes[:, 1]))
         if cfg.hills:  # high ground sees further by day; hills hide what is behind them
             heights = pp._windows(hmap[..., None], sp.pos, cfg.view, cfg.size)[..., 0]  # (N, view, view)
@@ -877,7 +952,7 @@ def num_actions(cfg: EvoConfig) -> int:
     return NUM_ACTIONS * (2 if cfg.signals else 1)
 
 
-GENE_NAMES = {"animal": ("speed", "sight", "breed", "size", "brain", "diet"), "plant": ("spread", "tough")}
+GENE_NAMES = {"animal": ("speed", "sight", "breed", "size", "brain", "diet", "camo"), "plant": ("spread", "tough")}
 
 
 class StepInfo(NamedTuple):
@@ -1194,9 +1269,11 @@ def advance(cfg: EvoConfig, key: jax.Array, state: State, prey_act, pred_act) ->
     # 4. Metabolism (with trait and signal costs) and caps.
     prey = prey._replace(energy=prey.energy - cfg.signal_cost * prey_sig)
     pred = pred._replace(energy=pred.energy - cfg.signal_cost * pred_sig)
-    prey = _metabolise(cfg, prey, cfg.prey_energy_cap)
+    prey = _metabolise(cfg, prey, cfg.prey_energy_cap, size_cost=cfg.prey_size_cost if cfg.prey_size_cost >= 0 else None)
     pred = _metabolise(cfg, pred, cfg.pred_energy_cap, cfg.pred_base_cost, cfg.pred_speed_cost if cfg.pred_speed_cost >= 0 else None,
                        cfg.pred_size_cost if cfg.pred_size_cost >= 0 else None)
+    if cfg.camo_gene:
+        pred = pred._replace(energy=pred.energy - cfg.camo_cost * pred.genes[:, 6] * pred.alive)
 
     # 5. Starvation. Deaths are recorded before any slot is reused.
     prey = prey._replace(alive=prey.alive & (prey.energy > 0))

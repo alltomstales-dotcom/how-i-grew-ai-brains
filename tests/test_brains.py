@@ -17,7 +17,7 @@ def still(n):
 
 
 def test_every_animal_has_a_brain_gene():
-    assert evo.ANIMAL_GENES == 6 and evo.GENE_NAMES["animal"][4] == "brain"
+    assert evo.ANIMAL_GENES == 7 and evo.GENE_NAMES["animal"][4] == "brain"
     assert evo.EvoConfig().founder_animal[4] == 0.5
     s = evo.make_state(CFG, prey=[(5, 5, 20.0, 0.0, 0.5, 0.5, 0.5)])  # written without a brain gene
     assert float(s.prey.genes[0, 4]) == 0.5
@@ -82,7 +82,7 @@ def test_runs_saved_with_four_genes_still_load():
     from scripts.eval import load_world_config
     world, cfg = load_world_config({"world_name": "flank_signals",
                                     "world": {"founder_animal": [0.2, 0.5, 0.5, 0.5], "size": 12}})
-    assert cfg.founder_animal == (0.2, 0.5, 0.5, 0.5, 0.5, 0.5)
+    assert cfg.founder_animal == (0.2, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5)
     s = world.reset(cfg, KEY)
     assert s.prey.genes.shape[1] == evo.ANIMAL_GENES
 

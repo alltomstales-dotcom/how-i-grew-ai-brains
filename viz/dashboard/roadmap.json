@@ -125,6 +125,10 @@
     "12e, with the cap out of the way, is it burn or the race? The race: no race lasts at low and high burn, the race doesn't, at about the same income",
     "12f, can a big enough meal carry the race? PASS: meals of 50 last in 0.980 and 0.945 of worlds, the first where size decides catches and both species last",
     "12g, with a race that lasts, does size follow climate? Grazers yes, strongly: meadow 0.90, forest 0.28, tundra 0.14. FAIL on tundra's survival on one set (0.344, 0.875)",
+    "12h, why do tundra's grazers end up small? PASS: winter shrinks them from 0.91 to 0.12, and with size free they stay at 0.93",
+    "12i, do winter's worlds fade because small grazers are small meals? PASS: flat meals of 71 take worlds from 0.098 to 1.000, with grazers as small, and hunters lose their lead over the chaser",
+    "13a, can camouflage evolve? Free, yes (0.94 on both seeds, lasting 0.746 and 0.973). At a price, FAIL: the seeds split, 0.079 and 0.939",
+    "13b, a valley, and what camouflage can cost (training)",
     "A food web: mid-predators and scavengers (Stage 5b)",
     "Maps of 128-256 cells, sharded across the GB10",
     "Armour and camouflage genes"

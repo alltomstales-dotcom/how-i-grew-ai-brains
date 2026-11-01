@@ -27,7 +27,7 @@ def test_reset_founders_in_range():
         g = np.asarray(sp.genes)[np.asarray(sp.alive)]
         assert g.shape == (n, evo.ANIMAL_GENES)
         assert (g >= 0).all() and (g <= 1).all()
-        assert np.allclose(g.mean(0), [0.2, 0.5, 0.5, 0.5, 0.5, 0.5], atol=0.12)
+        assert np.allclose(g.mean(0), [0.2, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5], atol=0.12)
         assert (np.asarray(sp.gen) == 0).all()
     plant = np.asarray(s.plant)
     assert 0.2 < plant.mean() < 0.8
@@ -59,7 +59,7 @@ def test_empty_pool_falls_back_to_founders():
     s = evo.reset(CFG, jax.random.PRNGKey(2), pool)
     g = np.asarray(s.prey.genes)[np.asarray(s.prey.alive)]
     assert np.isfinite(g).all()
-    assert np.allclose(g.mean(0), [0.2, 0.5, 0.5, 0.5, 0.5, 0.5], atol=0.12)
+    assert np.allclose(g.mean(0), [0.2, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5], atol=0.12)
     pg = np.asarray(s.plant_genes)[np.asarray(s.plant)]
     assert np.allclose(pg.mean(0), [0.5, 0.2], atol=0.05)
 
@@ -169,7 +169,7 @@ def test_child_inherits_genes_gen_and_tag():
     s = s._replace(prey=s.prey._replace(gen=s.prey.gen.at[0].set(4), tag=s.prey.tag.at[0].set(1)))
     p = step(c, s).state.prey
     assert bool(p.alive[1])
-    np.testing.assert_allclose(np.asarray(p.genes[1]), [0.3, 0.6, 0.0, evo.FOUNDER_SIZE, evo.FOUNDER_SIZE, evo.FOUNDER_SIZE])
+    np.testing.assert_allclose(np.asarray(p.genes[1]), [0.3, 0.6, 0.0, evo.FOUNDER_SIZE, evo.FOUNDER_SIZE, evo.FOUNDER_SIZE, evo.FOUNDER_SIZE])
     assert int(p.gen[1]) == 5 and int(p.tag[1]) == 1
     assert np.asarray(p.pos[1]).tolist() == [2, 2]
 
@@ -234,8 +234,8 @@ def test_germination_on_empty_world():
 
 def test_batch_step_reseeds_done_world_from_pool():
     c = cfg(gene_sigma=0.0, max_steps=10)
-    prey = [(1, 1, 20.0, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9), (3, 3, 20.0, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9)]
-    pred = [(8, 1, 20.0, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9), (8, 3, 20.0, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9)]
+    prey = [(1, 1, 20.0, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9), (3, 3, 20.0, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9)]
+    pred = [(8, 1, 20.0, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9), (8, 3, 20.0, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9)]
     plants = [(5, 5, 0.9, 0.9)]
     done_world = evo.make_state(c, prey=prey, pred=pred, plants=plants, t=9)
     live_world = evo.make_state(c, prey=prey, pred=pred, plants=plants, t=0)
@@ -310,7 +310,7 @@ def test_reset_mixed_tags_half():
         genes = np.asarray(sp.genes)[alive]
         assert alive.sum() == n and (tag == 1).sum() == n // 2
         np.testing.assert_allclose(genes[tag == 1], 0.9)
-        assert np.allclose(genes[tag == 0].mean(0), [0.2, 0.5, 0.5, 0.5, 0.5, 0.5], atol=0.15)
+        assert np.allclose(genes[tag == 0].mean(0), [0.2, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5], atol=0.15)
         assert (np.asarray(sp.gen)[alive][tag == 0] == 0).all()
     np.testing.assert_allclose(np.asarray(s.plant_genes)[np.asarray(s.plant)], 0.9)
 
@@ -360,7 +360,7 @@ def test_reset_mixed_can_evolve_one_gene_only():
     alive, tag = np.asarray(s.prey.alive), np.asarray(s.prey.tag)
     evolved = np.asarray(s.prey.genes)[alive & (tag == 1)]
     np.testing.assert_allclose(evolved[:, 0], 0.9)
-    assert np.allclose(evolved[:, 1:].mean(0), [0.5, 0.5, 0.5, 0.5, 0.5], atol=0.15)
+    assert np.allclose(evolved[:, 1:].mean(0), [0.5, 0.5, 0.5, 0.5, 0.5, 0.5], atol=0.15)
 
 
 def test_thinned_plant_pool_keeps_living_genomes():

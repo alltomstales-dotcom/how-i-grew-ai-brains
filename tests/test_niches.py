@@ -32,8 +32,8 @@ def test_stay_action_keeps_animals_in_place():
 
 def test_every_animal_has_a_size_gene_seen_in_the_last_channel():
     s = evo.reset(CFG, KEY)
-    assert s.prey.genes.shape[1] == evo.ANIMAL_GENES == 6
-    assert evo.GENE_NAMES["animal"] == ("speed", "sight", "breed", "size", "brain", "diet")
+    assert s.prey.genes.shape[1] == evo.ANIMAL_GENES == 7
+    assert evo.GENE_NAMES["animal"] == ("speed", "sight", "breed", "size", "brain", "diet", "camo")
     assert CFG.founder_animal[3] == 0.5
     assert evo.OBS_CHANNELS == 11
     s = evo.make_state(CFG, prey=[(5, 5, 20.0, 0.0, 0.5, 0.5, 0.8)])
@@ -204,6 +204,77 @@ def test_stage_12g_only_meals_and_their_cap_change():
         feast, plain = get_world(f"bulk_feast_{climate}")[1](), get_world(f"bulk_{climate}")[1]()
         assert feast.catch_energy == 50.0 and feast.pred_energy_cap == 170.0
         assert {**asdict(feast), "catch_energy": plain.catch_energy, "pred_energy_cap": plain.pred_energy_cap} == asdict(plain)
+
+
+def test_stage_12h_winter_is_tundras_and_size_can_be_free_for_grazers():
+    from dataclasses import asdict
+    from simulations.worlds import get_world
+    feast, winter, free, tundra = (get_world(n)[1]() for n in ("bulk_feast_50", "bulk_winter", "bulk_winter_free", "bulk_tundra"))
+    assert winter.winter_len == tundra.winter_len == 60 and winter.winter_value == tundra.winter_value
+    assert {**asdict(winter), "winter_len": feast.winter_len} == asdict(feast)
+    assert {**asdict(free), "prey_size_cost": winter.prey_size_cost} == asdict(winter)
+    def grazer_spent(c, size):
+        s = evo.make_state(c, prey=[(3, 3, 20.0, 0.0, 0.0, 1.0, size)])
+        return 20.0 - float(step(c, s).state.prey.energy[0])
+    usual = cfg(sizes=True, size_cost=0.5)
+    gone = cfg(sizes=True, size_cost=0.5, prey_size_cost=0.0)
+    assert np.isclose(grazer_spent(usual, 1.0) - grazer_spent(usual, 0.0), 0.5, atol=0.2)
+    assert np.isclose(grazer_spent(gone, 1.0), grazer_spent(gone, 0.0), atol=0.2)
+
+
+def test_stage_12i_only_the_meal_changes():
+    from dataclasses import asdict
+    from simulations.worlds import get_world
+    flat, winter = get_world("bulk_winter_flat")[1](), get_world("bulk_winter")[1]()
+    assert flat.catch_energy == 71.0 and flat.flat_meals and flat.pred_energy_cap >= 58.5 + 71.0
+    assert {**asdict(flat), "catch_energy": winter.catch_energy, "flat_meals": winter.flat_meals} == asdict(winter)
+
+
+def test_stage_13a_a_grazer_sees_a_hunter_only_within_its_camouflage():
+    c = cfg(camo_gene=True)
+    r = c.view // 2
+    def seen_at(gap, camo):
+        s = evo.make_state(c, prey=[(3, 5, 20.0, 0.0, 1.0, 0.5, 0.5)], pred=[(3 + gap, 5, 30.0, 0.0, 0.0, 0.5, 0.5)])
+        s = s._replace(pred=s.pred._replace(genes=s.pred.genes.at[0, 6].set(camo)))
+        prey_obs, pred_obs = evo.observe(c, s)
+        return float(prey_obs[0, r, r + gap, 3]) > 0
+    assert int(evo.camo_radius(0.0)) == 4 and int(evo.camo_radius(1.0)) == 1 and int(evo.camo_radius(0.1)) == 4
+    assert seen_at(1, 1.0) and not seen_at(2, 1.0)  # fully hidden: only from the next cell
+    assert seen_at(2, 0.5) and not seen_at(3, 0.5)  # 4 - floor(2) = 2
+    assert seen_at(3, 0.1) and seen_at(4, 0.1)  # hides nothing, within the grazer's sight of 4
+
+
+def test_stage_13a_camouflage_costs_only_hunters_and_only_where_it_works():
+    def spent(c, camo):
+        s = evo.make_state(c, prey=[(3, 3, 20.0, 0.0, 0.0, 1.0, 0.5)], pred=[(8, 8, 30.0, 0.0, 0.0, 1.0, 0.5)])
+        s = s._replace(pred=s.pred._replace(genes=s.pred.genes.at[0, 6].set(camo)), prey=s.prey._replace(genes=s.prey.genes.at[0, 6].set(camo)))
+        r = step(c, s)
+        return 30.0 - float(r.state.pred.energy[0]), 20.0 - float(r.state.prey.energy[0])
+    priced = cfg(camo_gene=True, camo_cost=0.25)
+    assert np.isclose(spent(priced, 1.0)[0] - spent(priced, 0.0)[0], 0.25, atol=1e-4)
+    assert np.isclose(spent(priced, 1.0)[1], spent(priced, 0.0)[1], atol=0.2)
+    off = cfg(camo_gene=False, camo_cost=0.25)
+    assert np.isclose(spent(off, 1.0)[0], spent(off, 0.0)[0], atol=1e-4)
+
+
+def test_stage_13a_worlds_start_visible_and_differ_only_as_intended():
+    from simulations.worlds import get_world
+    neutral, free, priced = (get_world(n)[1]() for n in ("camo_neutral", "camo_free", "camo"))
+    assert neutral.founder_animal[6] == 0.1 and not neutral.camo_gene and neutral.stealth_radius == 0 and not neutral.sizes
+    assert free.camo_gene and free.camo_cost == 0.0
+    assert priced.camo_gene and priced.camo_cost == 0.25 and priced.seed_rate == 0.2 and priced.catch_energy == 25.0
+
+
+def test_stage_13b_only_the_price_or_the_founders_change():
+    from dataclasses import asdict
+    from simulations.worlds import get_world
+    base = get_world("camo")[1]()
+    assert int(evo.camo_radius(0.1)) == 4 and int(evo.camo_radius(0.2)) == 3  # founders either side of the first step
+    start = get_world("camo_start")[1]()
+    assert start.founder_animal[6] == 0.2 and {**asdict(start), "founder_animal": base.founder_animal} == asdict(base)
+    for name, price in (("camo_10", 0.10), ("camo_05", 0.05)):
+        c = get_world(name)[1]()
+        assert c.camo_cost == price and {**asdict(c), "camo_cost": base.camo_cost} == asdict(base)
 
 
 def test_v3_two_fixed_plant_kinds():

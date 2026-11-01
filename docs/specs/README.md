@@ -43,6 +43,10 @@ replaced with neutral wording; the engineering and the results are unchanged.
 | [Burn or race](2026-11-01-burn-or-race-design.md) | 12e: with meals that fit, is it burn or the race? | PASS: the race |
 | [Price of the race](2026-11-01-price-of-the-race-design.md) | 12f: can a big enough meal carry the race? | PASS: meals of 50 and 70 |
 | [Feast continents](2026-11-01-feast-continents-design.md) | 12g: with a race that lasts, does size follow climate? | FAIL on tundra's survival on one set; size follows climate |
+| [Small in winter](2026-11-01-small-in-winter-design.md) | 12h: why do tundra's grazers end up small? | PASS: winter plus upkeep |
+| [Small meals](2026-11-01-small-meals-design.md) | 12i: do winter's worlds fade because small grazers are small meals? | PASS, and hunters lose their edge |
+| [Camouflage gene](2026-11-01-camouflage-gene-design.md) | 13a: can camouflage evolve? | FAIL at a price, the seeds split; free, it evolves and lasts |
+| [Camouflage price](2026-11-01-camouflage-price-design.md) | 13b: a valley, and what camouflage can cost | training |
 
 The league and predator-stall work of Stage 3b is written up in the [roadmap](../roadmap.md).
 A summary of all of it is in [results.md](../results.md).
