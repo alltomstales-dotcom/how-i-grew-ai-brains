@@ -275,7 +275,7 @@ share beats the other's by at least 0.10, and beats its own at 0-10 steps by at 
 
 **Stage 11b, do climate's differences survive real migration? (FAIL by the rule on a flawed bar, 2026-10-31).** Migrants could replace residents and trainers kept pace. Grazer sight stayed meadow over forest over tundra (0.37 / 0.22 / 0.11 and 0.70 / 0.25 / 0.10). Bar 1 (5% descended from arrivals) failed, but its measure was flawed: every world's restart wiped the lineage tags, so "nearly isolated" in stage 11a is withdrawn. Spec: `docs/specs/2026-10-31-migration-design.md`.
 
-**Stage 11c, how much do migrants really contribute? (built 2026-10-31, training).** Lineage tags now survive restarts. Test, on two sets: the share no longer collapses at restarts, at least 20% of meadow's and tundra's grazers descend from arrivals, and grazer sight keeps its order. Spec: `docs/specs/2026-10-31-lineage-design.md`.
+**Stage 11c, how much do migrants really contribute? (FAIL by the rule on meadow's share, 2026-10-31, and the strongest result so far).** Lineage tags now survive restarts. On two sets, 72% and 96% of tundra's grazers descend from arrivals, and every one of forest's hunters does, but only about 10% of meadow's grazers, under the 20% bar. Grazer sight still comes out meadow 0.73 and 0.74, forest 0.24 and 0.23, tundra 0.11 and 0.11. So climate's differences hold against heavy migration, and that order has held on all six sets. Spec: `docs/specs/2026-10-31-lineage-design.md`.
 
 ### Stage 8: toward realism
 
