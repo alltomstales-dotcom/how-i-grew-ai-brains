@@ -50,6 +50,8 @@ WORLDS = {
     "bulk_winter_flat": (evo, evo.BulkWinterFlatConfig),
     "camo": (evo, evo.CamoConfig),
     "camo_free": (evo, evo.CamoFreeConfig),
+    "tiny_stealth": (evo, evo.TinyStealthConfig),
+    "tiny_winter": (evo, evo.TinyWinterConfig),
     "camo_neutral": (evo, evo.CamoNeutralConfig),
     "camo_meadow": (evo, evo.CamoMeadowConfig),
     "camo_forest": (evo, evo.CamoForestConfig),
@@ -105,4 +107,5 @@ def num_actions(world, cfg) -> int:
 def make_net(world, cfg, memory: int = 0):
     """The brain for this world and config: its inputs, actions, memory and (Stage 7a) brain size."""
     from agents.networks import ActorCritic
-    return ActorCritic(num_actions=num_actions(world, cfg), memory=memory, brain=getattr(cfg, "brains", False))
+    return ActorCritic(num_actions=num_actions(world, cfg), memory=memory, brain=getattr(cfg, "brains", False),
+                       tiny=getattr(cfg, "tiny_brain", False))

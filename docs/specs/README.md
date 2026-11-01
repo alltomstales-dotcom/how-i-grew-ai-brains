@@ -50,6 +50,9 @@ replaced with neutral wording; the engineering and the results are unchanged.
 | [Camouflage and climate](2026-11-01-camouflage-climate-design.md) | 13c: does camouflage follow climate? | FAIL on two of three bars; it spreads in the walking order on both sets |
 | [Transplant](2026-11-01-transplant-design.md) | 13d: are brains better at their own climate? | FAIL on both bars; a one-way effect in hunters |
 | [No crossing](2026-11-01-no-crossing-design.md) | 13e: does camouflage really travel between continents? | PASS: tundra never gets there alone |
+| [Individual brains](2026-11-01-individual-brains-design.md) | 14a: individual brains that descendants inherit | FAIL, and Lamarckian inheritance does harm |
+| [Heritable learning](2026-11-01-heritable-learning-design.md) | 14b: does evolution keep learning? | FAIL on the rescue; the rate does fall |
+| [Long inheritance](2026-11-01-long-inheritance-design.md) | 14c: does inherited knowledge build up, given time? | training |
 
 The league and predator-stall work of Stage 3b is written up in the [roadmap](../roadmap.md).
 A summary of all of it is in [results.md](../results.md).

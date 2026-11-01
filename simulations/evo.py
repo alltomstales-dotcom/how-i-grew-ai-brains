@@ -104,6 +104,7 @@ class EvoConfig(WorldConfig):
     stealth_radius: int = 0  # > 0: a grazer sees a hunter only within this many cells (Stage 10f)
     camo_gene: bool = False  # a grazer sees a hunter only within camo_radius of that hunter's gene (Stage 13a)
     camo_cost: float = 0.0  # energy per step for a hunter's camo gene 1
+    tiny_brain: bool = False  # the small network, so each animal can hold its own (Stage 14a)
     fat_sense: bool = False  # animals can see how much energy visible prey hold (Stage 5b)
     stored_meals: bool = False  # a catch is worth what the prey stored, times meal_share, not a fixed catch_energy (Stage 5b)
     meal_share: float = 1.25  # meant to match catch_energy 25 with prey at about 20; prey eaten held about 9.5, so about 12 (5b v1)
@@ -509,6 +510,18 @@ class CamoTundraConfig(TundraConfig):
     camo_gene: bool = True
     camo_cost: float = 0.10
     founder_animal: tuple = (0.2, 0.5, 0.5, 0.5, 0.5, 0.5, 0.1)
+
+
+@dataclass(frozen=True)
+class TinyStealthConfig(LastingStealthConfig):
+    """Stage 14a: lasting_stealth with a network small enough for each animal to hold its own."""
+    tiny_brain: bool = True
+
+
+@dataclass(frozen=True)
+class TinyWinterConfig(TinyStealthConfig):
+    """Stage 14a: the same with tundra's winter, where inherited lessons can go out of date."""
+    winter_len: int = 60
 
 
 @dataclass(frozen=True)
@@ -1010,6 +1023,8 @@ class StepInfo(NamedTuple):
     bad_bites: jax.Array
     eaten_energy: jax.Array  # energy held by the prey eaten this step
     eaten_baseline: jax.Array  # the same if each had held the living prey's mean energy
+    prey_parent: jax.Array  # (N,) each slot's parent if a child was born into it this step, else the slot itself
+    pred_parent: jax.Array
     pred_bites: jax.Array  # omnivore worlds: plants eaten by hunters
     pred_plant_gain: jax.Array  # energy hunters got from plants
     pred_meat_gain: jax.Array  # energy hunters got from catches
@@ -1152,7 +1167,7 @@ def _mates(cfg: EvoConfig, sp: Species) -> tuple[jax.Array, jax.Array]:
     return d[jnp.arange(n), mate] <= cfg.mate_radius, mate
 
 
-def _reproduce(cfg: EvoConfig, key, sp: Species, repro_energy: float) -> tuple[Species, jax.Array]:
+def _reproduce(cfg: EvoConfig, key, sp: Species, repro_energy: float) -> tuple[Species, jax.Array, jax.Array]:
     """Like predprey.reproduce, but each animal's threshold comes from its breed
     gene and the child inherits mutated genes, generation + 1 and the tag. With
     mating on, a ready animal also needs a mate nearby, and the child takes each
@@ -1179,7 +1194,7 @@ def _reproduce(cfg: EvoConfig, key, sp: Species, repro_energy: float) -> tuple[S
         genes=sp.genes.at[target].set(child_genes, mode="drop"),
         gen=sp.gen.at[target].set(sp.gen + 1, mode="drop"),
         tag=sp.tag.at[target].set(sp.tag, mode="drop"),
-    ), can
+    ), can, jnp.arange(n).at[target].set(jnp.arange(n), mode="drop")
 
 
 def _graze(cfg: EvoConfig, key, prey: Species, plant, plant_genes, bitten, good=0, factor=1.0):
@@ -1307,8 +1322,8 @@ def advance(cfg: EvoConfig, key: jax.Array, state: State, prey_act, pred_act) ->
     pred_died = pred_was & ~pred.alive
 
     # 6. Reproduction with inherited, mutated genes.
-    prey, prey_born = _reproduce(cfg, k_rprey, prey, cfg.prey_repro_energy)
-    pred, pred_born = _reproduce(cfg, k_rpred, pred, cfg.pred_repro_energy)
+    prey, prey_born, prey_parent = _reproduce(cfg, k_rprey, prey, cfg.prey_repro_energy)
+    pred, pred_born, pred_parent = _reproduce(cfg, k_rpred, pred, cfg.pred_repro_energy)
 
     # 7. Plants die, seed and germinate.
     plant, plant_genes, bitten = _plants(cfg, k_plant, plant, state.plant_genes, terrain == 0, bitten,
@@ -1337,6 +1352,8 @@ def advance(cfg: EvoConfig, key: jax.Array, state: State, prey_act, pred_act) ->
     pp_sum, pp_count = pp.nearest_dist(prey, pred, cfg.size)
     qq_sum, qq_count = pp.nearest_dist(pred, pred, cfg.size, exclude_self=True)
     info = StepInfo(
+        prey_parent=prey_parent,
+        pred_parent=pred_parent,
         catches=eaten.sum().astype(jnp.int32),  # prey eaten (equals predators that ate unless hunting in packs)
         prey_births=prey_born.sum().astype(jnp.int32),
         pred_births=pred_born.sum().astype(jnp.int32),

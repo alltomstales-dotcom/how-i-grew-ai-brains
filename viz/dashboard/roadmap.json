@@ -132,6 +132,9 @@
     "13c, does camouflage follow climate? FAIL: 0.93 everywhere. But it spreads meadow, forest, tundra on both sets, the direction animals walk",
     "13d, are brains better at their own climate? FAIL: training repeats within a few percent, tundra's hunters are better in tundra and no worse in meadow, grazers show no home advantage",
     "13e, does camouflage really travel between continents? PASS: with no crossing meadow still gets there, and tundra never does in 600 updates, on two sets",
+    "14a, individual brains that descendants inherit: FAIL. Learning in life barely helps, and Lamarckian inheritance does harm, most in winter (0.516, 0.547)",
+    "14b, does evolution keep learning? FAIL on bar 2: evolution turns it down, and worlds don't fully recover (0.531, 0.797)",
+    "14c, does inherited knowledge build up, given time? About 350 generations (training)",
     "A food web: mid-predators and scavengers (Stage 5b)",
     "Maps of 128-256 cells, sharded across the GB10",
     "Armour and camouflage genes"

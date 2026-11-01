@@ -305,6 +305,12 @@ share beats the other's by at least 0.10, and beats its own at 0-10 steps by at 
 
 **Stage 13e, does camouflage really travel between continents? (PASS, 2026-11-01).** With no crossing, meadow still gets there (updates 83 and 38), and tundra never does in 600 updates on either set (0.086, 0.140), and its worlds die. With crossing, tundra's hunters reach about 0.90. So a continent ended up with a trait it didn't reach alone. Lineages aren't traced, and crossing rescued tundra's worlds on only one set of two. Spec: `docs/specs/2026-11-01-no-crossing-design.md`.
 
+**Stage 14a, individual brains that descendants inherit (FAIL on bars 2 and 3, 2026-11-01).** Tom's idea. Each animal holds its own network of 4,702 weights. Learning in life barely helps (0.98x), and Lamarckian inheritance does harm: 0.98x and 0.94x on catches, and in winter worlds last in 0.516 and 0.547 against more than 0.9. Why isn't settled, and this learning rule may just be weak. Spec: `docs/specs/2026-11-01-individual-brains-design.md`.
+
+**Stage 14b, does evolution keep learning? (FAIL on bar 2, 2026-11-01).** A heritable learning rate. Evolution turns it down (0.264, 0.256 against a control of 0.425, 0.563), but worlds don't fully recover (0.531, 0.797 against a bar of 0.8). Baldwinian's falls too, so it isn't only about inheriting stale lessons. Spec: `docs/specs/2026-11-01-heritable-learning-design.md`.
+
+**Stage 14c, does inherited knowledge build up, given time? (built 2026-11-01, training).** Stage 14a's arms for about 350 generations in place of 50. Spec: `docs/specs/2026-11-01-long-inheritance-design.md`.
+
 ### Stage 8: toward realism
 
 - **Physics.** Move to continuous 2-D, then 3-D, physics in JAX (Brax or MuJoCo MJX), which keeps
