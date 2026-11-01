@@ -67,6 +67,14 @@ def test_the_roomy_world_only_changes_the_slots():
     assert (b.max_prey, b.max_pred) == (a.max_prey * 3, a.max_pred * 3) and (b.stealth_radius, b.seed_rate, b.catch_energy) == (a.stealth_radius, a.seed_rate, a.catch_energy)
 
 
+def test_the_three_size_arms_differ_only_as_intended():
+    from simulations.worlds import get_world
+    base, cheap, nocatch = (get_world(n)[1]() for n in ("bulk_base", "bulk_cheap", "bulk_nocatch"))
+    assert base.sizes and base.catch_scale == 0.25 and base.size_cost == 0.5 and base.size_catch and base.stealth_radius == 1
+    assert cheap.size_cost == 0.1 and cheap.size_catch
+    assert not nocatch.size_catch and nocatch.size_cost == 0.5
+
+
 def test_the_sweep_runs_on_a_tiny_world(tmp_path):
     import scripts.lasting as lasting
     assert lasting.main(["--tiny", "--steps", "30", "--episodes", "2", "--out", str(tmp_path)]) == 0

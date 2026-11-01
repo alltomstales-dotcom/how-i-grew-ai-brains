@@ -36,6 +36,8 @@ replaced with neutral wording; the engineering and the results are unchanged.
 | [Continents](2026-10-31-continents-design.md) | 11a: do different climates make different animals? | FAIL on two of three bars; climate clearly shaped bodies. Its migrant measure was flawed |
 | [Migration](2026-10-31-migration-design.md) | 11b: do climate's differences survive real migration? | FAIL by the rule on a flawed bar; grazer sight kept its order |
 | [Lineage](2026-10-31-lineage-design.md) | 11c: how much do migrants really contribute? | FAIL on meadow's share; climate holds against heavy migration |
+| [Bulk](2026-10-31-bulk-design.md) | 12a: does size follow climate too? | FAIL on two of three bars; size kills the hunters |
+| [Why bulk kills](2026-11-01-why-bulk-kills-design.md) | 12b: which part of size kills the hunters? | training |
 
 The league and predator-stall work of Stage 3b is written up in the [roadmap](../roadmap.md).
 A summary of all of it is in [results.md](../results.md).

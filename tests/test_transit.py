@@ -86,6 +86,13 @@ def test_climates_differ_only_as_intended():
     assert {m.climate, f.climate, t.climate} == {"meadow", "forest", "tundra"}
 
 
+def test_bulk_worlds_only_switch_size_on():
+    for bulk, plain in (("bulk_meadow", "meadow"), ("bulk_forest", "forest"), ("bulk_tundra", "tundra")):
+        b, p = get_world(bulk)[1](), get_world(plain)[1]()
+        assert b.sizes and b.catch_scale == 0.25 and not p.sizes
+        assert (b.climate, b.thickets, b.winter_len, b.size, b.max_prey) == (p.climate, p.thickets, p.winter_len, p.size, p.max_prey)
+
+
 def test_training_runs_with_crossing(tmp_path):
     import scripts.train as train
     common = ["--tiny", "--runs-dir", str(tmp_path), "--updates", "2", "--world", "tundra", "--transit-dir", str(tmp_path / "x"), "--transit-prob", "1"]

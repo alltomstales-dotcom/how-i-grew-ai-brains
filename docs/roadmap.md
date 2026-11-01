@@ -277,6 +277,10 @@ share beats the other's by at least 0.10, and beats its own at 0-10 steps by at 
 
 **Stage 11c, how much do migrants really contribute? (FAIL by the rule on meadow's share, 2026-10-31, and the strongest result so far).** Lineage tags now survive restarts. On two sets, 72% and 96% of tundra's grazers descend from arrivals, and every one of forest's hunters does, but only about 10% of meadow's grazers, under the 20% bar. Grazer sight still comes out meadow 0.73 and 0.74, forest 0.24 and 0.23, tundra 0.11 and 0.11. So climate's differences hold against heavy migration, and that order has held on all six sets. Spec: `docs/specs/2026-10-31-lineage-design.md`.
 
+**Stage 12a, does a body part that matters follow climate too? (FAIL on two of three bars, 2026-11-01).** Tom asked for more complexity in the organism, then spotted the result on the phone viewer: hunters collapse. Size on the three continents took meadow and tundra from lasting in every world to none, with hunters down about tenfold. Hunters grow big in meadow and tundra (0.73 to 0.91) and tiny in forest (0.05), where they all but stop hunting. Grazer sight kept its order, more narrowly. Spec: `docs/specs/2026-10-31-bulk-design.md`.
+
+**Stage 12b, why does size kill the hunters? (built 2026-11-01, training).** Size costs energy, makes a catch uncertain, and changes a meal's worth, all at once. Two arms separate them in the small world: a cheaper body, and size with no part in predation. Spec: `docs/specs/2026-11-01-why-bulk-kills-design.md`.
+
 ### Stage 8: toward realism
 
 - **Physics.** Move to continuous 2-D, then 3-D, physics in JAX (Brax or MuJoCo MJX), which keeps

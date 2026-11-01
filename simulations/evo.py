@@ -290,6 +290,44 @@ class TundraConfig(ContinentConfig):
 
 
 @dataclass(frozen=True)
+class BulkMeadowConfig(ContinentConfig):
+    """Stage 12a: size matters: for catching, for not being caught, for digesting, and it costs energy every step."""
+    sizes: bool = True
+    catch_scale: float = 0.25
+
+
+@dataclass(frozen=True)
+class BulkForestConfig(ForestConfig):
+    sizes: bool = True
+    catch_scale: float = 0.25
+
+
+@dataclass(frozen=True)
+class BulkTundraConfig(TundraConfig):
+    sizes: bool = True
+    catch_scale: float = 0.25
+
+
+@dataclass(frozen=True)
+class BulkBaseConfig(LastingStealthConfig):
+    """Stage 12b: why does size kill the hunters? Stage 12a's rule in the small world, as the reference."""
+    sizes: bool = True
+    catch_scale: float = 0.25
+
+
+@dataclass(frozen=True)
+class BulkCheapConfig(BulkBaseConfig):
+    """Size costs a fifth as much energy."""
+    size_cost: float = 0.1
+
+
+@dataclass(frozen=True)
+class BulkNoCatchConfig(BulkBaseConfig):
+    """Size still costs energy and helps digest, and plays no part in predation: catches are certain, meals are flat."""
+    size_catch: bool = False
+
+
+@dataclass(frozen=True)
 class OmniConfig(EvoConfig):
     """Stage 9a: hunters keep their diet gene's share of every catch, and the rest of a grazer's share of plants."""
     omnivore: bool = True

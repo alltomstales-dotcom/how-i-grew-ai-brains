@@ -86,9 +86,11 @@ gene pools, on two machines: open meadow, forest and tundra. On two sets of fres
 across climates, and tundra's seasons drive a real predator and prey cycle. Forest's hunters die out. We first said migrants left
 few descendants, and [that measure was flawed](docs/specs/2026-10-31-lineage-design.md). Measured properly, up to 96% of tundra's
 grazers descend from arrivals, and their sight still stays low, so climate's differences hold against heavy migration.
+Then we [made size matter](docs/specs/2026-10-31-bulk-design.md), and hunters collapsed on all three, in meadow and tundra at
+bodies far bigger than their prey's. [Finding out why](docs/specs/2026-11-01-why-bulk-kills-design.md) is the current test.
 [What would you change?](SUGGESTIONS.md)
 
-**So far, [8 stages pass and 23 fail](docs/results.md).** The failures have often taught more than the passes.
+**So far, [8 stages pass and 24 fail](docs/results.md).** The failures have often taught more than the passes.
 
 ## Watch it
 
@@ -109,7 +111,7 @@ The series is on [NeatScienceStuff](https://www.youtube.com/@NeatScienceStuff), 
 |---|---|---|
 | 1 | I gave two species blank AI brains. The hunters starved. | [Watch](https://youtu.be/Y4Up4N4FfQI) |
 | 2 | Evolution made my AI hunters nearly blind | [Watch](https://youtu.be/xOQ9zQpWSkA) |
-| 3 | My AI hunters barely beat one line of code | coming Oct 31 |
+| 3 | My AI hunters barely beat one line of code | [Watch](https://youtu.be/wDC_GJpa2sI) |
 | 4 | My AI hunters only got smart when they had to surround their prey | coming Nov 1 |
 | 5 | I let evolution decide how big my AI's brain should be | coming Nov 2 |
 | 6 | I gave my AI hunters hills. They took the high ground. | coming Nov 3 |
@@ -119,6 +121,7 @@ The series is on [NeatScienceStuff](https://www.youtube.com/@NeatScienceStuff), 
 | 10 | I let my AI hunters eat plants. They stopped hunting. | coming Nov 7 |
 | 11 | My AI hunters split in two. Then I found the catch. | coming Nov 8 |
 | 12 | My AI grazers got so good that hunters keep starving. | coming Nov 9 |
+| 13 | I gave my AI creatures three different worlds. Evolution proved me wrong. | coming Nov 10 |
 <!-- videos:end -->
 
 ## Build this with us
