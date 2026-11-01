@@ -188,6 +188,24 @@ def test_stage_12e_a_big_meal_fits_whole_under_the_higher_cap():
     assert free.pred_size_cost == 0.0 and free.size_cost == 0.5 and free.catch_energy == 25.0 and free.pred_energy_cap == 120.0
 
 
+def test_stage_12f_feasts_fit_and_still_race():
+    from simulations.worlds import get_world
+    for name, energy in (("bulk_feast_50", 50.0), ("bulk_feast_70", 70.0)):
+        c = get_world(name)[1]()
+        threshold = c.pred_repro_energy * (0.5 + c.breed_span)
+        assert c.catch_energy == energy and threshold + energy * 1.5 <= c.pred_energy_cap
+        assert c.sizes and c.size_catch and c.catch_fixed == 0.0 and not c.flat_meals and c.pred_size_cost < 0
+
+
+def test_stage_12g_only_meals_and_their_cap_change():
+    from dataclasses import asdict
+    from simulations.worlds import get_world
+    for climate in ("meadow", "forest", "tundra"):
+        feast, plain = get_world(f"bulk_feast_{climate}")[1](), get_world(f"bulk_{climate}")[1]()
+        assert feast.catch_energy == 50.0 and feast.pred_energy_cap == 170.0
+        assert {**asdict(feast), "catch_energy": plain.catch_energy, "pred_energy_cap": plain.pred_energy_cap} == asdict(plain)
+
+
 def test_v3_two_fixed_plant_kinds():
     c = cfg(plant_kinds=True, plant_sigma=0.0, gene_sigma=0.05, seed_rate=1.0, tough_seed_cost=0.0, germinate_rate=0.05)
     s = evo.reset(c, KEY)

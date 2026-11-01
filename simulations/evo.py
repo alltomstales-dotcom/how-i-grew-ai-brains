@@ -397,6 +397,38 @@ class BulkCapRichConfig(BulkBaseConfig):
 
 
 @dataclass(frozen=True)
+class BulkFeast50Config(BulkBaseConfig):
+    """Stage 12f: the race and its burn, with meals of 50 that fit."""
+    catch_energy: float = 50.0
+    pred_energy_cap: float = 170.0
+
+
+@dataclass(frozen=True)
+class BulkFeast70Config(BulkFeast50Config):
+    """Stage 12f: the same with meals of 70."""
+    catch_energy: float = 70.0
+
+
+@dataclass(frozen=True)
+class BulkFeastMeadowConfig(BulkMeadowConfig):
+    """Stage 12g: stage 12a's continents with stage 12f's meals, which fit."""
+    catch_energy: float = 50.0
+    pred_energy_cap: float = 170.0
+
+
+@dataclass(frozen=True)
+class BulkFeastForestConfig(BulkForestConfig):
+    catch_energy: float = 50.0
+    pred_energy_cap: float = 170.0
+
+
+@dataclass(frozen=True)
+class BulkFeastTundraConfig(BulkTundraConfig):
+    catch_energy: float = 50.0
+    pred_energy_cap: float = 170.0
+
+
+@dataclass(frozen=True)
 class OmniConfig(EvoConfig):
     """Stage 9a: hunters keep their diet gene's share of every catch, and the rest of a grazer's share of plants."""
     omnivore: bool = True

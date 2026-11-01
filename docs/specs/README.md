@@ -40,7 +40,9 @@ replaced with neutral wording; the engineering and the results are unchanged.
 | [Why bulk kills](2026-11-01-why-bulk-kills-design.md) | 12b: which part of size kills the hunters? | PASS: its part in predation, with a later correction |
 | [Arms race](2026-11-01-arms-race-design.md) | 12c: the failed catch, the meal, or the arms race? | FAIL: not separated |
 | [Pay it back](2026-11-01-pay-it-back-design.md) | 12d: is it just the hunters' energy budget? | FAIL: not separated, and the energy cap clipped the race arm's meals |
-| [Burn or race](2026-11-01-burn-or-race-design.md) | 12e: with meals that fit, is it burn or the race? | training |
+| [Burn or race](2026-11-01-burn-or-race-design.md) | 12e: with meals that fit, is it burn or the race? | PASS: the race |
+| [Price of the race](2026-11-01-price-of-the-race-design.md) | 12f: can a big enough meal carry the race? | PASS: meals of 50 and 70 |
+| [Feast continents](2026-11-01-feast-continents-design.md) | 12g: with a race that lasts, does size follow climate? | training |
 
 The league and predator-stall work of Stage 3b is written up in the [roadmap](../roadmap.md).
 A summary of all of it is in [results.md](../results.md).

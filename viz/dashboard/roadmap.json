@@ -122,7 +122,9 @@
     "12b, why does size kill the hunters? Its part in predation, not its energy bill: without it worlds last (0.984, 0.852), and a cheap body barely helps (0.004, 0.004)",
     "12c, the failed catch, the meal, or the arms race? Not separated: no arm lasts, and failed catches and smaller meals each do harm with no race",
     "12d, is it just the hunters' energy budget? Not separated: paying failed catches back works (0.887, 0.586), and the race arm was flawed, since the energy cap clipped its meals",
-    "12e, with the cap out of the way, is it burn or the race? A two-by-two with meals that fit (training)",
+    "12e, with the cap out of the way, is it burn or the race? The race: no race lasts at low and high burn, the race doesn't, at about the same income",
+    "12f, can a big enough meal carry the race? PASS: meals of 50 last in 0.980 and 0.945 of worlds, the first where size decides catches and both species last",
+    "12g, with a race that lasts, does size follow climate? Stage 12a's question and bars, at meals of 50 (training)",
     "A food web: mid-predators and scavengers (Stage 5b)",
     "Maps of 128-256 cells, sharded across the GB10",
     "Armour and camouflage genes"

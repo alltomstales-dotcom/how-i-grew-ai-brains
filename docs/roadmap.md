@@ -285,7 +285,11 @@ share beats the other's by at least 0.10, and beats its own at 0-10 steps by at 
 
 **Stage 12d, is it just the hunters' energy budget? (not separated, 2026-11-01).** Paying failed catches back in bigger meals works (0.887, 0.586). With certain catches, grazers shrank to keep meals small (0.570, 0.281). The race arm scored 0.000 twice, but the energy cap of 60 clipped its meals, a flaw I missed, so it didn't test the budget. Spec: `docs/specs/2026-11-01-pay-it-back-design.md`.
 
-**Stage 12e, with the cap out of the way, is it burn or the race? (built 2026-11-01, training).** A two-by-two with meals that fit: race or no race, high burn or low. Spec: `docs/specs/2026-11-01-burn-or-race-design.md`.
+**Stage 12e, with the cap out of the way, is it burn or the race? (the race, 2026-11-01).** With meals that fit, no race lasts at low burn (0.996, 1.000) and high burn (0.723, 0.543); the race doesn't, at low burn (0.402, 0.297) or high (0.176, 0.008). The race world has about the same income as one that lasts in every world, so the average budget isn't the whole story, and I predicted all four would last. How the race does its harm isn't shown. Spec: `docs/specs/2026-11-01-burn-or-race-design.md`.
+
+**Stage 12f, can a big enough meal carry the race? (PASS, 2026-11-01).** Meals of 50 last in 0.980 and 0.945 of worlds, and meals of 70 in 0.996 and 0.988, against 0.176 and 0.008 at 37. It's the first world where size decides catches and both species last, with hunters still ahead of the chaser. Both species run to the top of the size range and sit near their caps. Spec: `docs/specs/2026-11-01-price-of-the-race-design.md`.
+
+**Stage 12g, with a race that lasts, does size follow climate? (built 2026-11-01, training).** Stage 12a's question and bars, on the three continents, at meals of 50. Spec: `docs/specs/2026-11-01-feast-continents-design.md`.
 
 ### Stage 8: toward realism
 
