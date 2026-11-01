@@ -116,6 +116,78 @@ def test_v3_size_does_not_change_catches_when_size_catch_is_off():
     assert np.isclose(float(res.state.pred.energy[0]) - 30.0, c.catch_energy - (c.pred_base_cost + 0.0), atol=0.6)
 
 
+def test_stage_12c_catches_and_meals_come_apart():
+    prey, pred = [(3, 3, 20.0, 0.0, 0.0, 1.0, 0.9)], [(3, 3, 10.0, 0.0, 0.0, 1.0, 0.1)]  # low energy: no birth to hide the gain
+    alone = lambda c, size=0.1: float(step(c, evo.make_state(c, pred=[(3, 3, 10.0, 0.0, 0.0, 1.0, size)])).state.pred.energy[0])
+
+    # A fixed chance of 1: a tiny hunter always takes a huge grazer, and the meal still follows its size.
+    c = cfg(sizes=True, catch_scale=0.25, catch_energy=25.0, catch_fixed=1.0)
+    res = step(c, evo.make_state(c, prey=prey, pred=pred))
+    assert not bool(res.state.prey.alive[0])
+    assert np.isclose(float(res.state.pred.energy[0]) - alone(c), 25.0 * 1.4, atol=1e-4)
+
+    # Flat meals: a catch is worth the same, and the chance still follows sizes.
+    c = cfg(sizes=True, catch_scale=0.25, catch_energy=25.0, flat_meals=True)
+    assert evo.catch_chance(c, 0.1, 0.9) < 0.05
+    s = evo.make_state(c, prey=[(3, 3, 20.0, 0.0, 0.0, 1.0, 0.1)], pred=[(3, 3, 10.0, 0.0, 0.0, 1.0, 0.9)])
+    gains = []
+    for k in range(40):
+        res = evo.advance(c, jax.random.PRNGKey(k), s, jnp.zeros(c.max_prey, jnp.int32), jnp.zeros(c.max_pred, jnp.int32))
+        if not bool(res.state.prey.alive[0]):
+            gains.append(float(res.state.pred.energy[0]) - alone(c, 0.9))
+    assert gains and np.isclose(np.mean(gains), 25.0, atol=1e-3) and np.ptp(gains) < 1e-3
+
+    # A fixed chance: the same odds whatever the sizes.
+    c = cfg(sizes=True, catch_scale=0.25, catch_fixed=0.73)
+    assert np.isclose(evo.catch_chance(c, 0.1, 0.9), 0.73) and np.isclose(evo.catch_chance(c, 0.9, 0.1), 0.73)
+    s = evo.make_state(c, prey=prey, pred=pred)
+    eaten = [not bool(evo.advance(c, jax.random.PRNGKey(k), s, jnp.zeros(c.max_prey, jnp.int32), jnp.zeros(c.max_pred, jnp.int32)).state.prey.alive[0]) for k in range(200)]
+    assert 0.63 < np.mean(eaten) < 0.83
+
+
+def test_stage_12c_worlds_differ_only_as_intended():
+    from simulations.worlds import get_world
+    certain, flat, coin = (get_world(n)[1]() for n in ("bulk_certain", "bulk_flat", "bulk_coin"))
+    assert certain.catch_fixed == 1.0 and not certain.flat_meals
+    assert flat.catch_fixed == 0.0 and flat.flat_meals
+    assert coin.catch_fixed == 0.73 and coin.flat_meals
+    assert all(w.sizes and w.size_catch and w.catch_scale == 0.25 and w.size_cost == 0.5 and w.stealth_radius == 1 for w in (certain, flat, coin))
+
+
+def test_stage_12d_only_meals_change():
+    from dataclasses import asdict
+    from simulations.worlds import get_world
+    for rich, poor, energy in (("bulk_rich", "bulk_base", 37.0), ("bulk_certain_rich", "bulk_certain", 28.0), ("bulk_coin_rich", "bulk_coin", 34.0)):
+        r, p = get_world(rich)[1](), get_world(poor)[1]()
+        assert r.catch_energy == energy and {**asdict(r), "catch_energy": p.catch_energy} == asdict(p)
+
+
+def test_stage_12e_size_can_be_free_for_hunters_only():
+    def spent(c, size):
+        s = evo.make_state(c, prey=[(3, 3, 20.0, 0.0, 0.0, 1.0, size)], pred=[(8, 8, 30.0, 0.0, 0.0, 1.0, size)])
+        res = step(c, s)
+        return 20.0 - float(res.state.prey.energy[0]), 30.0 - float(res.state.pred.energy[0])
+    usual = cfg(sizes=True, size_cost=0.5)
+    free = cfg(sizes=True, size_cost=0.5, pred_size_cost=0.0)
+    assert np.isclose(spent(usual, 1.0)[1] - spent(usual, 0.0)[1], 0.5, atol=1e-4)
+    assert np.isclose(spent(free, 1.0)[1], spent(free, 0.0)[1], atol=1e-4)
+    assert np.isclose(spent(free, 1.0)[0] - spent(free, 0.0)[0], 0.5, atol=0.2)  # grazers still pay (digesting aside)
+
+
+def test_stage_12e_a_big_meal_fits_whole_under_the_higher_cap():
+    from simulations.worlds import get_world
+    rich = get_world("bulk_cap_rich")[1]()
+    assert rich.catch_energy == 37.0 and rich.pred_energy_cap == 120.0 and rich.size_catch and rich.catch_fixed == 0.0
+    threshold = rich.pred_repro_energy * (0.5 + rich.breed_span)  # the highest a hunter holds before breeding
+    assert threshold + rich.catch_energy * 1.5 <= rich.pred_energy_cap
+    burn = get_world("bulk_cap_burn")[1]()
+    assert burn.catch_energy == 47.0 and burn.pred_base_cost == 0.96 and burn.catch_fixed == 0.73 and burn.flat_meals
+    assert threshold + burn.catch_energy <= burn.pred_energy_cap
+    coin, free = get_world("bulk_cap_coin")[1](), get_world("bulk_cap_free")[1]()
+    assert coin.catch_energy == 34.0 and coin.pred_energy_cap == 120.0
+    assert free.pred_size_cost == 0.0 and free.size_cost == 0.5 and free.catch_energy == 25.0 and free.pred_energy_cap == 120.0
+
+
 def test_v3_two_fixed_plant_kinds():
     c = cfg(plant_kinds=True, plant_sigma=0.0, gene_sigma=0.05, seed_rate=1.0, tough_seed_cost=0.0, germinate_rate=0.05)
     s = evo.reset(c, KEY)

@@ -119,7 +119,10 @@
     "11b, do climate's differences survive real migration? FAIL by the rule on a flawed bar: restarts wiped the lineage tags. Grazer sight kept its order on two sets",
     "11c, how much do migrants really contribute? FAIL by the rule on meadow's share (10%, bar 20%), and climate holds against heavy migration: 72% and 96% of tundra's grazers descend from arrivals, with sight still 0.11",
     "12a, does a body part that matters follow climate too? FAIL on two of three bars: size took meadow and tundra from lasting in every world to none, and hunters fell tenfold",
-    "12b, why does size kill the hunters? A cheaper body, and size with no part in predation (training)",
+    "12b, why does size kill the hunters? Its part in predation, not its energy bill: without it worlds last (0.984, 0.852), and a cheap body barely helps (0.004, 0.004)",
+    "12c, the failed catch, the meal, or the arms race? Not separated: no arm lasts, and failed catches and smaller meals each do harm with no race",
+    "12d, is it just the hunters' energy budget? Not separated: paying failed catches back works (0.887, 0.586), and the race arm was flawed, since the energy cap clipped its meals",
+    "12e, with the cap out of the way, is it burn or the race? A two-by-two with meals that fit (training)",
     "A food web: mid-predators and scavengers (Stage 5b)",
     "Maps of 128-256 cells, sharded across the GB10",
     "Armour and camouflage genes"

@@ -43,6 +43,7 @@ class EvoConfig(WorldConfig):
     founder_plant: tuple = (0.5, 0.2)
     speed_cost: float = 1.0
     pred_speed_cost: float = -1.0  # what speed costs hunters; < 0 = speed_cost (Stage 10e)
+    pred_size_cost: float = -1.0  # what size costs hunters; < 0 = size_cost (Stage 12e)
     sight_cost: float = 0.5
     seed_rate: float = 0.03  # 0.2 left food plentiful and prey stuck at the slot cap
     tough_seed_cost: float = 0.8
@@ -64,6 +65,8 @@ class EvoConfig(WorldConfig):
     sizes: bool = False  # the size gene matters: tough plants, burrows, catches and upkeep
     burrow_size: float = 0.5  # only animals smaller than this fit into a burrow
     catch_margin: float = 0.25  # catch_scale 0: a predator catches prey up to its own size plus this
+    catch_fixed: float = 0.0  # above 0: every catch succeeds with this chance, whatever the sizes (Stage 12c)
+    flat_meals: bool = False  # with sizes on, a meal is catch_energy, whatever the prey's size (Stage 12c)
     catch_scale: float = 0.0  # > 0: a catch succeeds with chance sigmoid((pred size - prey size) / scale)
     size_catch: bool = True  # False: size plays no part in predation (Stage 5a v3)
     plant_sigma: float = -1.0  # mutation of plant genes; < 0 = gene_sigma
@@ -325,6 +328,72 @@ class BulkCheapConfig(BulkBaseConfig):
 class BulkNoCatchConfig(BulkBaseConfig):
     """Size still costs energy and helps digest, and plays no part in predation: catches are certain, meals are flat."""
     size_catch: bool = False
+
+
+@dataclass(frozen=True)
+class BulkCertainConfig(BulkBaseConfig):
+    """Stage 12c: every catch succeeds; a meal still depends on the grazer's size."""
+    catch_fixed: float = 1.0
+
+
+@dataclass(frozen=True)
+class BulkFlatConfig(BulkBaseConfig):
+    """Stage 12c: catches depend on sizes; every meal is a flat 25."""
+    flat_meals: bool = True
+
+
+@dataclass(frozen=True)
+class BulkCoinConfig(BulkBaseConfig):
+    """Stage 12c: bulk_base's failure rate with nothing to race for: a fixed chance and flat meals."""
+    catch_fixed: float = 0.73
+    flat_meals: bool = True
+
+
+@dataclass(frozen=True)
+class BulkRichConfig(BulkBaseConfig):
+    """Stage 12d: bulk_base with its budget paid back in bigger meals."""
+    catch_energy: float = 37.0
+
+
+@dataclass(frozen=True)
+class BulkCertainRichConfig(BulkCertainConfig):
+    """Stage 12d: bulk_certain with a typical meal back at 25."""
+    catch_energy: float = 28.0
+
+
+@dataclass(frozen=True)
+class BulkCoinRichConfig(BulkCoinConfig):
+    """Stage 12d: bulk_coin with its failed catches paid back in bigger meals."""
+    catch_energy: float = 34.0
+
+
+@dataclass(frozen=True)
+class BulkCapCoinConfig(BulkCoinConfig):
+    """Stage 12e: no race, low burn, and meals that fit."""
+    catch_energy: float = 34.0
+    pred_energy_cap: float = 120.0
+
+
+@dataclass(frozen=True)
+class BulkCapBurnConfig(BulkCoinConfig):
+    """Stage 12e: no race, and hunters burn what a big one would, paid back in meals that fit."""
+    catch_energy: float = 47.0
+    pred_base_cost: float = 0.96
+    pred_energy_cap: float = 120.0
+
+
+@dataclass(frozen=True)
+class BulkCapFreeConfig(BulkBaseConfig):
+    """Stage 12e: the race, with size free for hunters and not for grazers."""
+    pred_size_cost: float = 0.0
+    pred_energy_cap: float = 120.0
+
+
+@dataclass(frozen=True)
+class BulkCapRichConfig(BulkBaseConfig):
+    """Stage 12e: the race and its burn, paid back in meals that fit."""
+    catch_energy: float = 37.0
+    pred_energy_cap: float = 120.0
 
 
 @dataclass(frozen=True)
@@ -865,11 +934,11 @@ def _plant_value(cfg: EvoConfig, t):
     return jnp.where((t // cfg.winter_len) % 2 == 0, 1.0, cfg.winter_value)
 
 
-def _metabolise(cfg: EvoConfig, sp: Species, cap: float, base: float = 1.0, speed_cost: float | None = None) -> Species:
+def _metabolise(cfg: EvoConfig, sp: Species, cap: float, base: float = 1.0, speed_cost: float | None = None, size_cost: float | None = None) -> Species:
     radius = sight_radius(sp.genes[:, 1])
     cost = base + (cfg.speed_cost if speed_cost is None else speed_cost) * sp.genes[:, 0] ** 2 + cfg.sight_cost * (radius - 1) / 3
     if cfg.sizes:
-        cost = cost + cfg.size_cost * sp.genes[:, 3]
+        cost = cost + (cfg.size_cost if size_cost is None else size_cost) * sp.genes[:, 3]
     if cfg.brains:
         cost = cost + cfg.brain_cost * sp.genes[:, 4]
     energy = jnp.minimum(sp.energy - cost * sp.alive, cap)
@@ -878,6 +947,8 @@ def _metabolise(cfg: EvoConfig, sp: Species, cap: float, base: float = 1.0, spee
 
 def catch_chance(cfg: EvoConfig, pred_size, prey_size):
     """Chance that a predator of pred_size catches a prey of prey_size on its cell (sizes on)."""
+    if cfg.catch_fixed > 0:
+        return jnp.full_like(jnp.asarray(pred_size, jnp.float32) - jnp.asarray(prey_size, jnp.float32), cfg.catch_fixed)
     if cfg.catch_scale > 0:
         return jax.nn.sigmoid((jnp.asarray(pred_size) - jnp.asarray(prey_size)) / cfg.catch_scale)
     return (jnp.asarray(prey_size) <= jnp.asarray(pred_size) + cfg.catch_margin).astype(jnp.float32)
@@ -909,7 +980,7 @@ def _predation(cfg: EvoConfig, key, prey: Species, pred: Species) -> tuple[jax.A
         has = has & (jax.random.uniform(key, has.shape) < catch_chance(cfg, pred.genes[:, 3], prey_size))
     caught = pp._first_claim(has, choice)
     eaten = jnp.zeros(prey.alive.shape[0], jnp.int32).at[choice].max(caught.astype(jnp.int32)) > 0
-    return caught, eaten, cfg.catch_energy * (0.5 + prey_size) * caught
+    return caught, eaten, cfg.catch_energy * (1.0 if cfg.flat_meals else 0.5 + prey_size) * caught
 
 
 def _pack_predation(cfg: EvoConfig, prey: Species, pred: Species):
@@ -1092,7 +1163,8 @@ def advance(cfg: EvoConfig, key: jax.Array, state: State, prey_act, pred_act) ->
     prey = prey._replace(energy=prey.energy - cfg.signal_cost * prey_sig)
     pred = pred._replace(energy=pred.energy - cfg.signal_cost * pred_sig)
     prey = _metabolise(cfg, prey, cfg.prey_energy_cap)
-    pred = _metabolise(cfg, pred, cfg.pred_energy_cap, cfg.pred_base_cost, cfg.pred_speed_cost if cfg.pred_speed_cost >= 0 else None)
+    pred = _metabolise(cfg, pred, cfg.pred_energy_cap, cfg.pred_base_cost, cfg.pred_speed_cost if cfg.pred_speed_cost >= 0 else None,
+                       cfg.pred_size_cost if cfg.pred_size_cost >= 0 else None)
 
     # 5. Starvation. Deaths are recorded before any slot is reused.
     prey = prey._replace(alive=prey.alive & (prey.energy > 0))

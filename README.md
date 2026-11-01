@@ -87,10 +87,10 @@ across climates, and tundra's seasons drive a real predator and prey cycle. Fore
 few descendants, and [that measure was flawed](docs/specs/2026-10-31-lineage-design.md). Measured properly, up to 96% of tundra's
 grazers descend from arrivals, and their sight still stays low, so climate's differences hold against heavy migration.
 Then we [made size matter](docs/specs/2026-10-31-bulk-design.md), and hunters collapsed on all three, in meadow and tundra at
-bodies far bigger than their prey's. [Finding out why](docs/specs/2026-11-01-why-bulk-kills-design.md) is the current test.
+bodies far bigger than their prey's. [Finding out why](docs/specs/2026-11-01-burn-or-race-design.md) has so far proved two of our guesses wrong.
 [What would you change?](SUGGESTIONS.md)
 
-**So far, [8 stages pass and 24 fail](docs/results.md).** The failures have often taught more than the passes.
+**So far, [9 stages pass and 26 fail](docs/results.md).** The failures have often taught more than the passes.
 
 ## Watch it
 

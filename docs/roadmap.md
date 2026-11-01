@@ -279,7 +279,13 @@ share beats the other's by at least 0.10, and beats its own at 0-10 steps by at 
 
 **Stage 12a, does a body part that matters follow climate too? (FAIL on two of three bars, 2026-11-01).** Tom asked for more complexity in the organism, then spotted the result on the phone viewer: hunters collapse. Size on the three continents took meadow and tundra from lasting in every world to none, with hunters down about tenfold. Hunters grow big in meadow and tundra (0.73 to 0.91) and tiny in forest (0.05), where they all but stop hunting. Grazer sight kept its order, more narrowly. Spec: `docs/specs/2026-10-31-bulk-design.md`.
 
-**Stage 12b, why does size kill the hunters? (built 2026-11-01, training).** Size costs energy, makes a catch uncertain, and changes a meal's worth, all at once. Two arms separate them in the small world: a cheaper body, and size with no part in predation. Spec: `docs/specs/2026-11-01-why-bulk-kills-design.md`.
+**Stage 12b, why does size kill the hunters? (bars met, 2026-11-01).** The collapse reproduces in the small world (0.000, 0.000). A body at a fifth of the cost barely helps (0.004, 0.004). Taking size out of predation restores lasting worlds (0.984, 0.852), with hunters shrinking to 0.08 where otherwise they climb to 0.92 and grazers follow. Spec: `docs/specs/2026-11-01-why-bulk-kills-design.md`.
+
+**Stage 12c, the failed catch, the meal, or the arms race? (not separated, 2026-11-01).** No arm lasts: certain catches 0.469, 0.434; flat meals 0.000, 0.000; a fixed 0.73 chance 0.219, 0.055. My arms-race prediction wasn't confirmed. Changing one thing at a time, a 27% failure rate with no race and a meal about 11% smaller each do real harm. It also corrects stage 12b: the cheap body's saving was largely taken back by the race. Spec: `docs/specs/2026-11-01-arms-race-design.md`.
+
+**Stage 12d, is it just the hunters' energy budget? (not separated, 2026-11-01).** Paying failed catches back in bigger meals works (0.887, 0.586). With certain catches, grazers shrank to keep meals small (0.570, 0.281). The race arm scored 0.000 twice, but the energy cap of 60 clipped its meals, a flaw I missed, so it didn't test the budget. Spec: `docs/specs/2026-11-01-pay-it-back-design.md`.
+
+**Stage 12e, with the cap out of the way, is it burn or the race? (built 2026-11-01, training).** A two-by-two with meals that fit: race or no race, high burn or low. Spec: `docs/specs/2026-11-01-burn-or-race-design.md`.
 
 ### Stage 8: toward realism
 
