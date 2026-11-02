@@ -57,7 +57,13 @@ replaced with neutral wording; the engineering and the results are unchanged.
 | [Genes, memory and learning](2026-11-01-memory-and-inheritance-review.md) | A review of the biology, and the plan after 14c | not a test: a review with references |
 | [Winter camouflage](2026-11-01-winter-camouflage-design.md) | 15a: can a gene that switches on in winter do what a constant one can't? | FAIL on two of three bars: price, not timing |
 | [Environmental mutation](2026-11-01-environmental-mutation-design.md) | 15c: does it matter where and when mutation happens? | FAIL on the pattern; more mutation unlocks tundra |
-| [Mutation zones](2026-11-01-mutation-zones-design.md) | 15d: do mutation zones really keep worlds alive? | training |
+| [Mutation zones](2026-11-01-mutation-zones-design.md) | 15d: do mutation zones really keep worlds alive? | PASS on both bars |
+| [Mutation mix](2026-11-01-mutation-mix-design.md) | 15e: is it the place, or the mix? | bar missed; two sets couldn't settle it |
+| [Place or mix](2026-11-01-place-or-mix-design.md) | 15f: place or mix, with enough sets to tell | FAIL: it's the mix |
+| [Culture](2026-11-02-culture-design.md) | 16: should parents teach, or should the young watch? | FAIL on bars 1 and 3, a tie on bar 2 |
+| [Genes plus lessons](2026-11-02-genes-plus-lessons-design.md) | 16b: born with instincts, then taught | training |
+| [Mealworm](2026-11-02-mealworm-design.md) | 18a: is the brain random garbage, and does size matter? | bars 1 and 3 pass, bar 2 fails |
+| [Slow, blind ambush](2026-11-02-slow-blind-ambush-design.md) | 18b: does an ambush predator evolve poor sight and slow legs? | FAIL on the living |
 
 The league and predator-stall work of Stage 3b is written up in the [roadmap](../roadmap.md).
 A summary of all of it is in [results.md](../results.md).

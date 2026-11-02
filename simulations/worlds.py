@@ -50,6 +50,8 @@ WORLDS = {
     "bulk_winter_flat": (evo, evo.BulkWinterFlatConfig),
     "camo": (evo, evo.CamoConfig),
     "camo_free": (evo, evo.CamoFreeConfig),
+    "ambush_stealth": (evo, evo.AmbushStealthConfig),
+    "brain_big": (evo, evo.BrainBigConfig),
     "tiny_stealth": (evo, evo.TinyStealthConfig),
     "tiny_winter": (evo, evo.TinyWinterConfig),
     "camo_winter_tundra": (evo, evo.CamoWinterTundraConfig),
@@ -57,6 +59,7 @@ WORLDS = {
     "mut_winter_tundra": (evo, evo.MutWinterTundraConfig),
     "mut_zone_tundra": (evo, evo.MutZoneTundraConfig),
     "mut_even_tundra": (evo, evo.MutEvenTundraConfig),
+    "mut_random_tundra": (evo, evo.MutRandomTundraConfig),
     "camo_neutral": (evo, evo.CamoNeutralConfig),
     "camo_meadow": (evo, evo.CamoMeadowConfig),
     "camo_forest": (evo, evo.CamoForestConfig),
@@ -113,4 +116,4 @@ def make_net(world, cfg, memory: int = 0):
     """The brain for this world and config: its inputs, actions, memory and (Stage 7a) brain size."""
     from agents.networks import ActorCritic
     return ActorCritic(num_actions=num_actions(world, cfg), memory=memory, brain=getattr(cfg, "brains", False),
-                       tiny=getattr(cfg, "tiny_brain", False))
+                       tiny=getattr(cfg, "tiny_brain", False), scale=getattr(cfg, "brain_scale", 1))

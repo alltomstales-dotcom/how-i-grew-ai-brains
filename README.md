@@ -96,7 +96,7 @@ bodies far bigger than their prey's. [Finding out why](docs/specs/2026-11-01-bur
 **Now, what tundra was missing.** [A gene that switches on in winter](docs/specs/2026-11-01-winter-camouflage-design.md) did no better than a cheaper constant one. [Twice the mutation](docs/specs/2026-11-01-environmental-mutation-design.md) takes tundra from never reaching camouflage to about 30 updates, so it was short of variation, not incapable. [What's known about genes, memory and learning](docs/specs/2026-11-01-memory-and-inheritance-review.md) sets the plan after it: genes that switch on with the seasons, environmental mutation, culture, and a compressed genome.
 [What would you change?](SUGGESTIONS.md)
 
-**So far, [14 stages pass and 37 fail](docs/results.md).** The failures have often taught more than the passes.
+**So far, [15 stages pass and 41 fail](docs/results.md), with one mixed.** The failures have often taught more than the passes.
 
 ## Watch it
 

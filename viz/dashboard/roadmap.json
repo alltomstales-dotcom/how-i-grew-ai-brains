@@ -1,6 +1,6 @@
 {
  "title": "autolearn — growing intelligence in simulated worlds",
- "updated": "2026-11-01",
+ "updated": "2026-11-02",
  "summary": "Animals learn by trial and error (reinforcement learning) and their bodies evolve, in worlds that run entirely on a DGX Spark's GPU. Nobody programs hunting, fleeing or foraging. We set the rules of the world and the goal (stay alive, have offspring), then watch what emerges.",
  "explainer": [
   "Inspiration: David Silver and Lasse Espeholt's 'Crucible' idea. Instead of learning from human data, agents learn from experience in a simulated world, so they can, in principle, keep improving without limit.",
@@ -9,7 +9,7 @@
   "Speed: the world, the brains and the learning are all compiled together in JAX. 1,024 worlds run in parallel on one GPU, at about 5,200 world-steps per second while learning and about 19,000 without it.",
   "Honesty: every stage has a test that can fail. Each test compares against controls, such as random brains, founder bodies or one gene changed at a time, so a pass means something."
  ],
- "now": "Individual brains hold up, learning in life barely helps, and over about 400 generations Lamarckian inheritance made hunters and grazers both worse, which looked like a rise until hunters faced the same grazers (14d). Nothing has yet improved on the founders. Next, from a review of the biology (docs/specs/2026-11-01-memory-and-inheritance-review.md): a camouflage gene expressed only in winter (15a), a season input (15b), environmental mutation (15c), culture (16), and a compressed genome with evolved learning rules (17).",
+ "now": "Culture failed. With no wiring passed down, children who watched or were taught by a parent hunted no better than random against grazers born with inherited brains, and teaching tied with watching. What the founders knew went with them. Viewers' tests before that: the brain isn't random garbage (3.5 to 4x random), a brain 16 times bigger adds only 4 to 7%, and slow, blind ambushers lost their sight but never made waiting pay. Next: genes plus lessons, the way real animals do it.",
  "stages": [
   {
    "id": 1,
@@ -139,9 +139,13 @@
     "15a, conditional expression: FAIL on two of three bars. Tundra alone evolves it, but no better than a constant gene at half the price, which carries the world far better. Price, not timing",
     "15b, a season input: does knowing the season reduce Lamarckian harm in winter? (planned)",
     "15c, environmental mutation: FAIL on bar 3. Twice the mutation takes tundra from never to about 30 updates, and the pattern doesn't change the gene. But zones keep worlds alive far better (0.969, 0.656 against 0.219, 0.000)",
-    "15d, do mutation zones really keep worlds alive? Fresh seeds, with its own bar (training)",
+    "15d, do mutation zones really keep worlds alive? PASS: 1.000, 1.000 against 0.719, 0.156, at the same average",
+    "15e, is it the place, or the mix? Bar missed: the random mix scored 1.000 and 0.000, so one set swung the answer",
+    "15f, place or mix, with enough sets to tell: both average 0.977. What helps is that mutation is uneven, and where it happens made no difference this test can see",
     "16, culture: juveniles learn from a parent, with no weights inherited (planned)",
     "17, a compressed genome decoded into a brain, with evolved learning rules (planned)",
+    "18a, dumber than a mealworm? A viewer's challenge: how far from random, and do brain sizes change anything? (training)",
+    "18b, does an ambush predator evolve poor sight and slow legs? A viewer's question (training)",
     "A food web: mid-predators and scavengers (Stage 5b)",
     "Maps of 128-256 cells, sharded across the GB10",
     "Armour and camouflage genes"

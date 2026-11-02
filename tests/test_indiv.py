@@ -98,3 +98,77 @@ def test_hunters_and_grazers_can_come_from_different_runs(tmp_path):
     assert shared.main(["--tiny", "--runs-dir", str(tmp_path), "--updates", "2", "--world", "tiny_stealth", "--no-clips", "--ckpt-every", "1", "--run-id", "f"]) == 0
     assert cross.main(["--hunters", str(tmp_path / "f"), "--grazers", str(tmp_path / "a"), "--founder", "--episodes", "2", "--steps", "100"]) == 0
 
+
+
+def culture_world():
+    from dataclasses import replace
+    world, cls = get_world("tiny_stealth")
+    c = replace(cls(), size=12, max_prey=6, max_pred=4, init_prey=3, init_pred=2)
+    net = make_net(world, c, 0)
+    blank = indiv.blank_brain(net, c.view, obs_channels(world, c))
+    return world, c, net, blank
+
+
+def test_a_child_of_a_culture_arm_gets_the_blank_brain_and_its_parent_as_teacher():
+    pop = small_pop()
+    kin = indiv.fresh_kin(1, 4, 8)
+    parent = jnp.array([[0, 2, 2, 3]])
+    blank = {"w": 9.0 * jnp.ones(3)}
+    done = jnp.zeros((1, 4), bool)
+    new, kin = indiv.culture_birth(pop, kin, parent, done, jax.random.PRNGKey(0), indiv.IndivConfig(mode="teach", sigma=0.0, childhood=8), blank)
+    assert np.allclose(new.params["w"][0, 1], 9.0) and np.allclose(new.params["w"][0, 2], 2.0)  # the child is blank, the parent unchanged
+    assert int(kin.teacher[0, 1]) == 2 and int(kin.age[0, 1]) == 0 and int(kin.teacher[0, 2]) == -1
+    kin = kin._replace(age=jnp.zeros((1, 4), jnp.int32))
+    died = jnp.array([[False, False, True, False]])
+    same = jnp.arange(4)[None, :]
+    _, kin = indiv.culture_birth(new, kin, same, died, jax.random.PRNGKey(0), indiv.IndivConfig(mode="teach", sigma=0.0, childhood=8), blank)
+    assert int(kin.teacher[0, 1]) == -1  # its teacher died
+
+
+@pytest.mark.parametrize("mode", ["watch", "teach"])
+def test_lessons_need_a_near_living_parent_and_stop_after_childhood(mode):
+    world, c, net, blank = culture_world()
+    s = world.reset(c, jax.random.PRNGKey(1))
+    sp = jax.tree.map(lambda x: x[None], s.prey)
+    n = sp.alive.shape[1]
+    sp = sp._replace(alive=jnp.ones((1, n), bool), pos=jnp.zeros((1, n, 2), jnp.int32))
+    obs = jax.vmap(lambda x: world.observe(c, x))(jax.tree.map(lambda x: x[None], s))[0]
+    action = jnp.ones((1, n), jnp.int32)
+    tree = jax.tree.map(lambda x: jnp.broadcast_to(x, (1, n) + x.shape), blank)
+    keys = jax.random.split(jax.random.PRNGKey(2), len(jax.tree.leaves(blank)))
+    other = jax.tree.map(lambda x: x, tree)
+    pop = indiv.Pop(indiv._noisy(other, keys[0], 0.1), tree)
+    teacher = jnp.full((1, n), -1, jnp.int32).at[0, 1].set(0).at[0, 2].set(0).at[0, 3].set(0)
+    age = jnp.zeros((1, n), jnp.int32).at[0, 2].set(8)  # slot 2 has grown up
+    kin = indiv.fresh_kin(1, n, 8)._replace(teacher=teacher, age=age)
+    sp = sp._replace(pos=sp.pos.at[0, 3].set(jnp.array([6, 6])))  # slot 3 is out of sight when view is small
+    cfg = indiv.IndivConfig(mode=mode, lr=0.02, childhood=8, teach_cost=0.5)
+    lesson = indiv.make_lesson(net, 1, c.size)
+    new, kin2, given = lesson(pop, kin, obs, action, sp, jnp.zeros(1, bool), cfg)
+    moved = [not np.allclose(a[0, i], b[0, i]) for i in range(4) for a, b in [(jax.tree.leaves(new.params)[0], jax.tree.leaves(pop.params)[0])]]
+    assert moved == [False, True, False, False]
+    assert float(kin2.lessons) == 1.0 and float(kin2.child_steps) == 2.0 and float(given[0, 0]) == 1.0 and float(given.sum()) == 1.0
+
+
+@pytest.mark.parametrize("mode,childhood,cost", [("blank", 0, 0.0), ("watch", 8, 0.0), ("teach", 8, 0.05)])
+def test_culture_arms_train_and_can_be_tested(tmp_path, mode, childhood, cost):
+    import scripts.train_indiv as train
+    import scripts.cross_indiv as cross
+    common = ["--tiny", "--world", "tiny_stealth", "--runs-dir", str(tmp_path), "--updates", "2", "--ckpt-every", "2"]
+    assert train.main(common + ["--mode", mode, "--run-id", "a", "--childhood", str(childhood), "--teach-cost", str(cost)]) == 0
+    rows = [json.loads(l) for l in open(tmp_path / "a" / "metrics.jsonl")]
+    assert "pred_lessons" in rows[-1]
+    assert train.main(common + ["--mode", "darwin", "--run-id", "b"]) == 0
+    assert cross.main(["--hunters", str(tmp_path / "a"), "--grazers", str(tmp_path / "b"), "--episodes", "2", "--steps", "100"]) == 0
+    assert "both_alive" in json.load(open(tmp_path / "b" / "cross_a.json"))
+    assert cross.main(["--hunters", str(tmp_path / "b"), "--grazers", str(tmp_path / "b"), "--episodes", "2", "--steps", "100", "--random"]) == 0
+    assert cross.main(["--hunters", str(tmp_path / "a"), "--grazers", str(tmp_path / "a"), "--episodes", "2", "--steps", "100", "--both-live", "--out", "own.json"]) == 0
+
+
+def test_with_innate_a_culture_child_is_born_with_its_parents_birth_brain():
+    pop = indiv.Pop({"w": jnp.arange(4.0)[None, :, None] * jnp.ones((1, 4, 3))}, {"w": 10.0 + jnp.arange(4.0)[None, :, None] * jnp.ones((1, 4, 3))})
+    parent = jnp.array([[0, 2, 2, 3]])
+    new, kin = indiv.culture_birth(pop, indiv.fresh_kin(1, 4, 8), parent, jnp.zeros((1, 4), bool), jax.random.PRNGKey(0),
+                                   indiv.IndivConfig(mode="watch", sigma=0.0, childhood=8, innate=True), {"w": 9.0 * jnp.ones(3)})
+    assert np.allclose(new.params["w"][0, 1], 12.0) and np.allclose(new.birth["w"][0, 1], 12.0)  # the parent's birth brain, not what it learned
+    assert int(kin.teacher[0, 1]) == 2

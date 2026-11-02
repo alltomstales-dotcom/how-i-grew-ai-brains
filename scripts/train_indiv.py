@@ -16,7 +16,7 @@ import jax.numpy as jnp
 import numpy as np
 
 from agents.checkpoint import load_brains
-from agents.indiv import Carry, IndivConfig, MODES, make_step, spread, tile
+from agents.indiv import CULTURE, Carry, IndivConfig, MODES, blank_brain, fresh_kin, make_step, spread, tile
 from agents.networks import init_params
 from simulations.worlds import get_world, make_net, obs_channels
 
@@ -49,6 +49,9 @@ def main(argv=None) -> int:
     p.add_argument("--sigma", type=float, default=0.01)
     p.add_argument("--founder-noise", type=float, default=0.01)
     p.add_argument("--gene-lr", action="store_true", help="each animal's learning rate follows its own brain gene (Stage 14b)")
+    p.add_argument("--childhood", type=int, default=0, help="Stage 16: steps after birth with lessons")
+    p.add_argument("--teach-cost", type=float, default=0.0, help="Stage 16: energy a parent pays per lesson")
+    p.add_argument("--innate", action="store_true", help="Stage 16b: culture children are born with the parent's birth brain")
     p.add_argument("--ckpt-every", type=int, default=15)
     p.add_argument("--tiny", action="store_true", help="a tiny world, for tests")
     args = p.parse_args(argv)
@@ -58,7 +61,7 @@ def main(argv=None) -> int:
     if args.tiny:
         wcfg = replace(wcfg, size=12, max_prey=8, max_pred=4, init_prey=4, init_pred=2, max_steps=20)
         args.num_envs = min(args.num_envs, 2)
-    cfg = IndivConfig(mode=args.mode, lr=args.lr, sigma=args.sigma, gene_lr=args.gene_lr, steps=4 if args.tiny else 32)
+    cfg = IndivConfig(mode=args.mode, lr=args.lr, sigma=args.sigma, gene_lr=args.gene_lr, steps=4 if args.tiny else 32, childhood=args.childhood, teach_cost=args.teach_cost, innate=args.innate)
     run_dir = Path(args.runs_dir) / args.run_id
     run_dir.mkdir(parents=True, exist_ok=True)
     (run_dir / "config.json").write_text(json.dumps({"world_name": args.world, "world": asdict(wcfg), "indiv": asdict(cfg), "train": {"memory": 0}, "args": vars(args)}, indent=1, default=str))
@@ -75,7 +78,11 @@ def main(argv=None) -> int:
     state = jax.vmap(lambda k: world.reset(wcfg, k))(jax.random.split(k_env, E))
     prey_obs, pred_obs = jax.vmap(lambda s: world.observe(wcfg, s))(state)
     carry = Carry(state, tile(prey0, E, wcfg.max_prey, k_prey, args.founder_noise), tile(pred0, E, wcfg.max_pred, k_pred, args.founder_noise), prey_obs, pred_obs, key)
-    step = make_step(net, world, wcfg, cfg)
+    blank = None
+    if cfg.mode in CULTURE:
+        blank = blank_brain(net, wcfg.view, obs_channels(world, wcfg))
+        carry = carry._replace(prey_kin=fresh_kin(E, wcfg.max_prey, cfg.childhood), pred_kin=fresh_kin(E, wcfg.max_pred, cfg.childhood))
+    step = make_step(net, world, wcfg, cfg, blank=blank)
 
     @jax.jit
     def update(c):
@@ -95,6 +102,9 @@ def main(argv=None) -> int:
         row.update({k: float(v) for k, v in world.extra_metrics(info).items() if jnp.ndim(v) == 0})
         row.update({f"pred_{k}": float(v) for k, v in spread(carry.pred, carry.state.pred.alive).items()})
         row.update({f"prey_{k}": float(v) for k, v in spread(carry.prey, carry.state.prey.alive).items()})
+        if cfg.mode in CULTURE:
+            for name, kin in (("pred", carry.pred_kin), ("prey", carry.prey_kin)):
+                row[f"{name}_child_steps"], row[f"{name}_lessons"], row[f"{name}_agree"] = float(kin.child_steps), float(kin.lessons), float(kin.agree)
         log.write(json.dumps(row) + "\n"); log.flush()
         if u % args.ckpt_every == 0 or u == args.updates:
             save_population(run_dir / "checkpoints" / "pop_latest.npz", carry, world)

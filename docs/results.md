@@ -3,8 +3,8 @@
 Each stage adds one pressure to the world. Its pass bar is fixed in a spec before any run, and it stays
 where it was even after a near miss. The spec holds the full numbers and the caveats.
 
-**The score so far: 6 stages or sub-stages pass and 9 fail, with one still training.** Counting each new version of a
-failed world as its own attempt, there are 16 failures. Some passes are weaker than others, as the notes say.
+**The score so far: 15 stages or sub-stages pass and 41 fail, with 18a mixed and 16b still training.** Counting each new
+version of a failed world as its own attempt. Some passes are weaker than others, as the notes say.
 
 | Stage | The question | The bar, set first | Result | Spec |
 |---|---|---|---|---|
@@ -59,6 +59,13 @@ failed world as its own attempt, there are 16 failures. Some passes are weaker t
 | 14d | Did Lamarckian hunters get better, or did their grazers get easier? | Against the same grazers, Lamarckian hunters win by 1.10x; separately, Lamarckian grazers are 1.10x easier | **FAIL on all three bars:** Lamarckian hunters catch 0.92x and 0.85x of Darwinian hunters and of their founders, and grazers are easier by 1.09x and 1.21x. The rise was both species declining. This rule and reward, not the idea in general | [spec](specs/2026-11-01-head-to-head-design.md) |
 | 15a | Can a gene that switches on in winter do what a constant one can't? | It evolves, 0.15 above a constant gene at the same average cost, and worlds last | **FAIL on two of three bars:** it evolves in tundra alone (0.90, 0.91), but so does a constant gene at half the price (0.90, 0.91), which lasts far better (0.750, 1.000 against 0.188, 0.031). Price was the barrier, not timing | [spec](specs/2026-11-01-winter-camouflage-design.md) |
 | 15c | Does it matter where and when mutation happens? (Tom's idea) | An environmental pattern ends 0.15 above even mutation at the same average | **FAIL on the pattern, and more mutation unlocks it:** twice the mutation takes isolated tundra from never reaching camouflage to about 30 updates. Worlds with mutation zones also last far better (0.969, 0.656 against 0.219, 0.000), which wasn't a bar and is being retested | [spec](specs/2026-11-01-environmental-mutation-design.md) |
+| 15d | Do mutation zones really keep worlds alive? | Zones last at least 0.25 better than even mutation, and in at least 0.5 of worlds | **PASS on both bars:** zones 1.000 and 1.000 against even 0.719 and 0.156, on fresh seeds | [spec](specs/2026-11-01-mutation-zones-design.md) |
+| 15e | Is it the place, or the mix? | The same mix of mutation applied at random lasts at least 0.25 better than even, and in at least 0.5 of worlds | **Bar missed:** random scored 1.000 and 0.000, so one set swung it end to end, and two sets couldn't settle it | [spec](specs/2026-11-01-mutation-mix-design.md) |
+| 15f | Place or mix, with enough sets to tell | Zones last at least 0.25 better than the random mix | **FAIL, and it's the mix:** both average 0.977. What helps is that mutation is uneven, not where it happens | [spec](specs/2026-11-01-place-or-mix-design.md) |
+| 16 | Should parents teach their young, or should the young watch? (the film's vote) | With no inherited wiring, lessons carry 1.5x what a blank brain does; teaching beats watching by 1.10x; culture reaches 0.9x of genes | **FAIL on bars 1 and 3, a tie on bar 2:** against grazers with inherited brains every culture arm hunts at random level (genes 0.0365 and 0.0344, watch 0.0144 and 0.0150, teach 0.0150 and 0.0135, random 0.0134 and 0.0132). What the founders knew went with them in about 20 updates | [spec](specs/2026-11-02-culture-design.md) |
+| 16b | Born with instincts, then taught | Lessons on top of an inherited brain add 1.10x | training | [spec](specs/2026-11-02-genes-plus-lessons-design.md) |
+| 18a | Is the brain just random garbage? (a viewer's challenge) | Usual hunters catch 3x random; a 16x bigger brain adds 1.10x; a 25x smaller one costs 1.10x | **Bars 1 and 3 pass, bar 2 fails:** 3.97x and 3.53x random; 16x bigger only 1.04x and 1.07x; 25x smaller 0.78x and 0.71x, which broke my prediction that it would keep up | [spec](specs/2026-11-02-mealworm-design.md) |
+| 18b | Does an ambush predator evolve poor sight and slow legs? (a viewer's question) | Speed 0.05 and sight 0.10 below a control, in a world where hunters make a living | **FAIL on the living:** sight 0.321 and 0.346 against 0.437 and 0.557, speed 0.206 and 0.213 against 0.298 and 0.314, but no world kept both species to step 1,999. Both genes fell by half and came back | [spec](specs/2026-11-02-slow-blind-ambush-design.md) |
 
 ## Limits worth repeating
 

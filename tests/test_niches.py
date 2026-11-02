@@ -337,6 +337,32 @@ def test_stage_15c_worlds_differ_only_as_intended():
         assert getattr(c, field) == value and {**asdict(c), field: 1.0} == asdict(base)
 
 
+def test_stage_15e_one_child_in_four_mutates_more_wherever_it_is_born():
+    c = cfg(gene_sigma=0.02, prey_repro_energy=10.0, breed_span=0.0, mut_random=5.0)
+    s = evo.make_state(c, prey=[(5, 3, 39.0, 0.5, 0.5, 0.0, 0.5)])
+    moved = []
+    for k in range(400):
+        r = evo.advance(c, jax.random.PRNGKey(k), s, jnp.zeros(c.max_prey, jnp.int32), jnp.zeros(c.max_pred, jnp.int32))
+        kid = np.asarray(r.info.prey_parent) != np.arange(c.max_prey)
+        if kid.any():
+            moved.append(abs(float(np.asarray(r.state.prey.genes)[kid][0, 1]) - 0.5))  # sight, mid-range, so nothing clips
+    moved = np.array(moved)
+    assert len(moved) > 300
+    assert 0.08 < np.mean(moved > 0.06) < 0.2  # 3 sigma at 1x, 0.6 sigma at 5x: about a quarter of 55%
+    from dataclasses import asdict
+    from simulations.worlds import get_world
+    rnd, base = get_world("mut_random_tundra")[1](), get_world("camo_tundra")[1]()
+    assert rnd.mut_random == 5.0 and {**asdict(rnd), "mut_random": 1.0} == asdict(base)
+
+
+def test_stage_18b_only_walking_costs_and_thickets_change():
+    from dataclasses import asdict
+    from simulations.worlds import get_world
+    a, b = get_world("ambush_stealth")[1](), get_world("lasting_stealth")[1]()
+    assert a.move_cost == 0.5 and a.thickets == 0.25 and a.stealth_radius == 1
+    assert {**asdict(a), "move_cost": b.move_cost, "thickets": b.thickets} == asdict(b)
+
+
 def test_v3_two_fixed_plant_kinds():
     c = cfg(plant_kinds=True, plant_sigma=0.0, gene_sigma=0.05, seed_rate=1.0, tough_seed_cost=0.0, germinate_rate=0.05)
     s = evo.reset(c, KEY)

@@ -94,3 +94,33 @@ def test_transplant_swaps_only_the_focal_brain(tmp_path):
     assert out["same"] == "b" and out["other"] == "c" and out["hunter_ratio"] >= 0 and out["grazer_ratio"] >= 0
     assert set(out) >= {"home", "hunter_same", "hunter_other", "grazer_same", "grazer_other"}
 
+
+
+def test_zone_births_counts_children_by_place(tmp_path):
+    import json
+    import scripts.train as train
+    import scripts.zone_births as zb
+    assert train.main(["--tiny", "--runs-dir", str(tmp_path), "--updates", "2", "--world", "lasting", "--no-clips", "--ckpt-every", "1", "--run-id", "z"]) == 0
+    assert zb.main(["--run-dir", str(tmp_path / "z"), "--episodes", "2", "--steps", "20"]) == 0
+    out = json.loads((tmp_path / "z" / "zone_births.json").read_text())
+    assert 0.0 <= out["grazer_share_in_zones"] <= 1.0 and 0.0 <= out["hunter_share_in_zones"] <= 1.0
+
+
+def test_brains_of_different_sizes_can_hunt_the_same_grazers(tmp_path):
+    import json
+    import jax
+    from agents.networks import init_params
+    from simulations.worlds import get_world, make_net, obs_channels
+    import scripts.cross_shared as cross
+    import scripts.train as train
+    world, cls = get_world("brain_big")
+    big, usual = cls(), get_world("lasting_stealth")[1]()
+    count = lambda c: sum(x.size for x in jax.tree.leaves(init_params(make_net(world, c, 0), jax.random.PRNGKey(0), c.view, obs_channels(world, c))))
+    assert count(usual) == 115750 and count(big) == 1802374
+    common = ["--tiny", "--runs-dir", str(tmp_path), "--updates", "2", "--no-clips", "--ckpt-every", "1"]
+    assert train.main([*common, "--world", "tiny_stealth", "--run-id", "s"]) == 0
+    assert train.main([*common, "--world", "lasting_stealth", "--run-id", "u"]) == 0
+    assert cross.main(["--hunters", str(tmp_path / "s"), "--grazers", str(tmp_path / "u"), "--episodes", "2"]) == 0
+    assert cross.main(["--hunters", str(tmp_path / "u"), "--grazers", str(tmp_path / "u"), "--random", "--episodes", "2"]) == 0
+    assert json.loads((tmp_path / "u" / "crossshared_u_random.json").read_text())["random"] is True
+

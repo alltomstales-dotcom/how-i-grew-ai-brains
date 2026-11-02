@@ -64,7 +64,7 @@ This could matter directly for results here. Tundra's hunters never reached camo
 
 **Why it may matter here.** Stage 13e's tundra never reached camouflage alone, and stage 13a's split suggests hunters can get stuck low on that gene. Extra mutation under winter's stress might get them unstuck, or it might just damage what's already working. That's untested.
 
-**Update, stage 15c:** the pattern didn't change where the gene ended up, while doubling the amount took tundra from never to about 30 updates. Worlds with mutation zones also lasted far better than even mutation, which stage 15d tests on fresh seeds.
+**Update, stage 15c:** the pattern didn't change where the gene ended up, while doubling the amount took tundra from never to about 30 updates. Worlds with mutation zones also lasted far better than even mutation, which stage 15d confirmed on fresh seeds. Stage 15f then found the same mix at random does just as well (0.977 each), so what helps is that mutation is uneven, not where it happens.
 
 **Not in this stage:** mutating the genes of living adults. Today a gene change only reaches the next generation through a birth, and changing an adult's genes mid-life is a different question, which I'd test separately if this one shows anything.
 

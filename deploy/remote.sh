@@ -81,7 +81,7 @@ case "$cmd" in
     mkdir -p runs
     docker run -d --name "$name" --label autolearn.mem_gb="$mem_gb" -e XLA_PYTHON_CLIENT_MEM_FRACTION="$FRAC" \
       "${COMMON[@]}" "$IMAGE" python -m scripts.train --mem-limit-gb "$limit" "$@" ;;
-  eval|league|compare|species|chase|signals|hills|episode3d|ambush|lifetime|scatter|meals|omnivore|persist|lasting|mapbench|transplant|train_indiv|eval_indiv|cross_indiv)
+  eval|league|compare|species|chase|signals|hills|episode3d|ambush|lifetime|scatter|meals|omnivore|persist|lasting|mapbench|transplant|train_indiv|eval_indiv|cross_indiv|zone_births|cross_shared)
     check_budget "$EVAL_GB"
     docker run --rm -e XLA_PYTHON_CLIENT_MEM_FRACTION="$FRAC" "${COMMON[@]}" "$IMAGE" python -m "scripts.$cmd" "$@" ;;
   dash)

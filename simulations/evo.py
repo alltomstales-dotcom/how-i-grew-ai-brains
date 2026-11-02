@@ -108,7 +108,9 @@ class EvoConfig(WorldConfig):
     mut_even: float = 1.0  # every child's mutation, as a multiple of gene_sigma (Stage 15c)
     mut_winter: float = 1.0  # the multiple for children born in winter
     mut_zone: float = 1.0  # the multiple for children born in every fourth column of cells
+    mut_random: float = 1.0  # the multiple for one child in four, at random, wherever it's born (Stage 15e)
     tiny_brain: bool = False  # the small network, so each animal can hold its own (Stage 14a)
+    brain_scale: int = 1  # conv width and hidden size as a multiple of the usual (Stage 18a)
     fat_sense: bool = False  # animals can see how much energy visible prey hold (Stage 5b)
     stored_meals: bool = False  # a catch is worth what the prey stored, times meal_share, not a fixed catch_energy (Stage 5b)
     meal_share: float = 1.25  # meant to match catch_energy 25 with prey at about 20; prey eaten held about 9.5, so about 12 (5b v1)
@@ -556,6 +558,25 @@ class MutZoneTundraConfig(CamoTundraConfig):
 class MutEvenTundraConfig(CamoTundraConfig):
     """Stage 15c's control: the same average mutation, everywhere, all year."""
     mut_even: float = 2.0
+
+
+@dataclass(frozen=True)
+class MutRandomTundraConfig(CamoTundraConfig):
+    """Stage 15e: mutation zones' mix, with no place: one child in four at 5x, wherever it's born."""
+    mut_random: float = 5.0
+
+
+@dataclass(frozen=True)
+class BrainBigConfig(LastingStealthConfig):
+    """Stage 18a: a viewer asked whether the brain is too small to be anything but garbage. This one is much bigger."""
+    brain_scale: int = 4
+
+
+@dataclass(frozen=True)
+class AmbushStealthConfig(LastingStealthConfig):
+    """Stage 18b, a viewer's question: walking costs and thickets, in a world where hunters can make a living."""
+    move_cost: float = 0.5
+    thickets: float = 0.25
 
 
 @dataclass(frozen=True)
@@ -1231,6 +1252,8 @@ def _reproduce(cfg: EvoConfig, key, sp: Species, repro_energy: float, t=0) -> tu
     target = jnp.where(can, free_idx[jnp.clip(rank, 0, n - 1)], n)  # n = dropped
     half = (sp.energy - cfg.birth_cost) / 2
     factor = cfg.mut_even * jnp.where(in_winter(cfg, t), cfg.mut_winter, 1.0) * jnp.where(sp.pos[:, 0] % 4 == 0, cfg.mut_zone, 1.0)
+    if cfg.mut_random != 1.0:
+        factor = factor * jnp.where(jax.random.uniform(jax.random.fold_in(key, 1), (n,)) < 0.25, cfg.mut_random, 1.0)
     child_genes = mutate(key, inherited, cfg.gene_sigma * factor[:, None])
     return Species(
         pos=sp.pos.at[target].set(sp.pos, mode="drop"),
