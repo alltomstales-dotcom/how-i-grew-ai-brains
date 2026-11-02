@@ -9,7 +9,7 @@
   "Speed: the world, the brains and the learning are all compiled together in JAX. 1,024 worlds run in parallel on one GPU, at about 5,200 world-steps per second while learning and about 19,000 without it.",
   "Honesty: every stage has a test that can fail. Each test compares against controls, such as random brains, founder bodies or one gene changed at a time, so a pass means something."
  ],
- "now": "Stage 14c is running: does inheriting what was learned build up over about 350 generations? So far, individual brains hold up, learning in life barely helps, and Lamarckian inheritance does harm. Next, from a review of the biology (docs/specs/2026-11-01-memory-and-inheritance-review.md): a camouflage gene expressed only in winter (15a), a season input (15b), environmental mutation (15c), culture (16), and a compressed genome with evolved learning rules (17).",
+ "now": "Individual brains hold up, learning in life barely helps, and over about 400 generations Lamarckian inheritance made hunters and grazers both worse, which looked like a rise until hunters faced the same grazers (14d). Nothing has yet improved on the founders. Next, from a review of the biology (docs/specs/2026-11-01-memory-and-inheritance-review.md): a camouflage gene expressed only in winter (15a), a season input (15b), environmental mutation (15c), culture (16), and a compressed genome with evolved learning rules (17).",
  "stages": [
   {
    "id": 1,
@@ -134,7 +134,8 @@
     "13e, does camouflage really travel between continents? PASS: with no crossing meadow still gets there, and tundra never does in 600 updates, on two sets",
     "14a, individual brains that descendants inherit: FAIL. Learning in life barely helps, and Lamarckian inheritance does harm, most in winter (0.516, 0.547)",
     "14b, does evolution keep learning? FAIL on bar 2: evolution turns it down, and worlds don't fully recover (0.531, 0.797)",
-    "14c, does inherited knowledge build up, given time? About 350 generations (training)",
+    "14c, does inherited knowledge build up, given time? FAIL on all three bars (1.03x, 1.11x), but Lamarckian alone keeps rising, and winter's harm is gone",
+    "14d, did Lamarckian hunters get better, or did their grazers get easier? Grazers got easier. Against the same grazers Lamarckian hunters catch 0.92x and 0.85x of Darwinian ones",
     "15a, conditional expression: a camouflage gene expressed only in winter. Can tundra evolve it alone? (planned)",
     "15b, a season input: does knowing the season reduce Lamarckian harm in winter? (planned)",
     "15c, environmental mutation: rising by place, season or a parent's hunger, against controls with the same average (planned)",

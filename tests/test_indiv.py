@@ -84,3 +84,17 @@ def test_only_learners_change_their_weights_in_life(tmp_path, mode, moves):
     assert ev.main(["--run-dir", str(tmp_path / run), "--episodes", "2", "--steps", "100"]) == 0
     out = json.loads((tmp_path / run / "eval_indiv.json").read_text())
     assert out["mode"] == mode and 0.0 <= out["learned"]["both_at_end"] <= 1.0
+
+
+def test_hunters_and_grazers_can_come_from_different_runs(tmp_path):
+    import scripts.cross_indiv as cross
+    import scripts.train as shared
+    import scripts.train_indiv as train
+    for run, mode in (("a", "darwin"), ("b", "lamarck")):
+        assert train.main(["--tiny", "--world", "tiny_stealth", "--mode", mode, "--run-id", run, "--runs-dir", str(tmp_path), "--updates", "2", "--ckpt-every", "1", "--num-envs", "2"]) == 0
+    assert cross.main(["--hunters", str(tmp_path / "b"), "--grazers", str(tmp_path / "a"), "--episodes", "2", "--steps", "100"]) == 0
+    out = json.loads((tmp_path / "a" / "cross_b.json").read_text())
+    assert out["hunters"] == "b" and out["grazers"] == "a" and out["catches_per_hunter_step"] >= 0
+    assert shared.main(["--tiny", "--runs-dir", str(tmp_path), "--updates", "2", "--world", "tiny_stealth", "--no-clips", "--ckpt-every", "1", "--run-id", "f"]) == 0
+    assert cross.main(["--hunters", str(tmp_path / "f"), "--grazers", str(tmp_path / "a"), "--founder", "--episodes", "2", "--steps", "100"]) == 0
+

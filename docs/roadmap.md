@@ -309,7 +309,9 @@ share beats the other's by at least 0.10, and beats its own at 0-10 steps by at 
 
 **Stage 14b, does evolution keep learning? (FAIL on bar 2, 2026-11-01).** A heritable learning rate. Evolution turns it down (0.264, 0.256 against a control of 0.425, 0.563), but worlds don't fully recover (0.531, 0.797 against a bar of 0.8). Baldwinian's falls too, so it isn't only about inheriting stale lessons. Spec: `docs/specs/2026-11-01-heritable-learning-design.md`.
 
-**Stage 14c, does inherited knowledge build up, given time? (built 2026-11-01, training).** Stage 14a's arms for about 350 generations in place of 50. Spec: `docs/specs/2026-11-01-long-inheritance-design.md`.
+**Stage 14c, does inherited knowledge build up, given time? (FAIL on all three bars, 2026-11-01).** About 400 generations. Lamarckian beats Darwinian by 1.03x and 1.11x, and its founders by 1.02x and 1.04x, against bars of 1.10x. But it's the only arm that rises over training, and winter's harm is gone (0.938, 0.953). Letting evolution turn learning down does worse (0.766, 0.562). A warning: a chaser also catches more against Lamarckian grazers, so the rise may be grazers getting easier. Spec: `docs/specs/2026-11-01-long-inheritance-design.md`.
+
+**Stage 14d, did Lamarckian hunters get better, or did their grazers get easier? (FAIL on all three bars, 2026-11-01).** Against the same grazers, Lamarckian hunters catch 0.92x and 0.85x of Darwinian hunters and of their founders, so stage 14c's rise wasn't knowledge building up. Every hunter catches more of Lamarckian grazers (1.09x, 1.21x). Nothing has improved on the founders in about 400 generations. It's this rule and reward, not the idea in general. Spec: `docs/specs/2026-11-01-head-to-head-design.md`.
 
 **The plan after stage 14c (2026-11-01).** From a review of what's known about genes, memory and learning, at `docs/specs/2026-11-01-memory-and-inheritance-review.md`. Each stage gets its bars fixed in a spec before it runs.
 

@@ -52,7 +52,8 @@ replaced with neutral wording; the engineering and the results are unchanged.
 | [No crossing](2026-11-01-no-crossing-design.md) | 13e: does camouflage really travel between continents? | PASS: tundra never gets there alone |
 | [Individual brains](2026-11-01-individual-brains-design.md) | 14a: individual brains that descendants inherit | FAIL, and Lamarckian inheritance does harm |
 | [Heritable learning](2026-11-01-heritable-learning-design.md) | 14b: does evolution keep learning? | FAIL on the rescue; the rate does fall |
-| [Long inheritance](2026-11-01-long-inheritance-design.md) | 14c: does inherited knowledge build up, given time? | training |
+| [Long inheritance](2026-11-01-long-inheritance-design.md) | 14c: does inherited knowledge build up, given time? | FAIL on all three bars |
+| [Head to head](2026-11-01-head-to-head-design.md) | 14d: did Lamarckian hunters get better, or did their grazers get easier? | FAIL: hunters got worse, and grazers got easier |
 | [Genes, memory and learning](2026-11-01-memory-and-inheritance-review.md) | A review of the biology, and the plan after 14c | not a test: a review with references |
 
 The league and predator-stall work of Stage 3b is written up in the [roadmap](../roadmap.md).
