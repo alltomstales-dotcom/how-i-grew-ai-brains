@@ -287,6 +287,56 @@ def test_stage_13c_continents_take_the_gene_and_keep_their_climate():
         assert {**asdict(c), **changed} == asdict(b)
 
 
+def test_stage_15a_a_winter_gene_works_and_costs_only_in_winter():
+    c = cfg(camo_gene=True, camo_winter=True, camo_cost=0.25, winter_len=10)
+    r = c.view // 2
+    def state(t):
+        s = evo.make_state(c, prey=[(3, 5, 20.0, 0.0, 1.0, 0.5, 0.5)], pred=[(6, 5, 30.0, 0.0, 0.0, 1.0, 0.5)], t=t)
+        return s._replace(pred=s.pred._replace(genes=s.pred.genes.at[0, 6].set(1.0)))
+    seen = lambda t: float(evo.observe(c, state(t))[0][0, r, r + 3, 3]) > 0
+    assert seen(5) and not seen(15)  # summer: on show; winter: hidden
+    def spent(t, camo):
+        s = state(t); s = s._replace(pred=s.pred._replace(genes=s.pred.genes.at[0, 6].set(camo)))
+        return 30.0 - float(step(c, s).state.pred.energy[0])
+    assert np.isclose(spent(15, 1.0) - spent(15, 0.0), 0.25, atol=1e-4)
+    assert np.isclose(spent(5, 1.0), spent(5, 0.0), atol=1e-4)
+
+
+def test_stage_15a_worlds_differ_only_as_intended():
+    from dataclasses import asdict
+    from simulations.worlds import get_world
+    base, winter, half = (get_world(n)[1]() for n in ("camo_tundra", "camo_winter_tundra", "camo_half_tundra"))
+    assert winter.camo_winter and {**asdict(winter), "camo_winter": False} == asdict(base)
+    assert half.camo_cost == 0.05 and {**asdict(half), "camo_cost": base.camo_cost} == asdict(base)
+
+
+def test_stage_15c_mutation_follows_season_and_place():
+    def spread(c, x, t):
+        s = evo.make_state(c, prey=[(x, 3, 39.0, 0.5, 0.5, 0.0, 0.5)], t=t)
+        out = []
+        for k in range(200):
+            r = evo.advance(c, jax.random.PRNGKey(k), s, jnp.zeros(c.max_prey, jnp.int32), jnp.zeros(c.max_pred, jnp.int32))
+            kid = np.asarray(r.info.prey_parent) != np.arange(c.max_prey)
+            if kid.any():
+                out.append(float(np.asarray(r.state.prey.genes)[kid][0, 2]))
+        return np.std(out)
+    base = dict(sizes=False, gene_sigma=0.02, prey_repro_energy=10.0, breed_span=0.0, winter_len=10)
+    plain = spread(cfg(**base), 5, 5)
+    assert np.isclose(plain, 0.02, atol=0.008)
+    assert spread(cfg(mut_even=3.0, **base), 5, 5) > 2 * plain
+    assert spread(cfg(mut_winter=3.0, **base), 5, 15) > 2 * plain and np.isclose(spread(cfg(mut_winter=3.0, **base), 5, 5), plain, atol=0.008)
+    assert spread(cfg(mut_zone=3.0, **base), 4, 5) > 2 * plain and np.isclose(spread(cfg(mut_zone=3.0, **base), 5, 5), plain, atol=0.008)
+
+
+def test_stage_15c_worlds_differ_only_as_intended():
+    from dataclasses import asdict
+    from simulations.worlds import get_world
+    base = get_world("camo_tundra")[1]()
+    for name, field, value in (("mut_winter_tundra", "mut_winter", 3.0), ("mut_zone_tundra", "mut_zone", 5.0), ("mut_even_tundra", "mut_even", 2.0)):
+        c = get_world(name)[1]()
+        assert getattr(c, field) == value and {**asdict(c), field: 1.0} == asdict(base)
+
+
 def test_v3_two_fixed_plant_kinds():
     c = cfg(plant_kinds=True, plant_sigma=0.0, gene_sigma=0.05, seed_rate=1.0, tough_seed_cost=0.0, germinate_rate=0.05)
     s = evo.reset(c, KEY)

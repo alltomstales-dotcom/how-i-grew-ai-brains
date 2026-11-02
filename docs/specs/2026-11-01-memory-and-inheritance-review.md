@@ -46,6 +46,8 @@ A gene often encodes a response more than a fixed trait. Continuous responses ar
 
 This could matter directly for results here. Tundra's hunters never reached camouflage alone (stage 13e), possibly because it costs energy all year. Tundra's grazers can't keep a big body through winter (stage 12h), and small grazers make small meals (stage 12i). All of that assumes a trait is on all the time, because the simulation can't do anything else. That reading is untested.
 
+**Update, stage 15a:** tested for camouflage in tundra, and it didn't hold. A gene that works only in winter evolves no better than a constant gene at the same average cost, and it carries the world far worse. Price was the barrier, and timing wasn't. That's one trait in one world. A trait that does harm out of season might show the opposite.
+
 ## Environmental mutation
 
 **Today:** a child's genes get Gaussian noise of a fixed size (`gene_sigma` 0.05) at birth, and an adult's genes never change. The environment plays no part.
@@ -56,11 +58,13 @@ This could matter directly for results here. Tundra's hunters never reached camo
 
 - **By place:** zones on the map where children born there mutate more.
 - **By season or climate:** more mutation in winter, or on one continent.
-- **By stress:** a hungry parent's child mutates more, which is the bacterial idea.
+- **By stress:** a hungry parent's child mutates more, which is the bacterial idea. Stage 15c leaves this out, since animals here only breed when well fed, so a parent at birth is never hungry.
 
 **The control that makes this a fair test.** More mutation of any kind might help, so each arm is compared with a control that has the same average mutation, spread evenly. Only then is the difference due to where and when mutation happens, and not just how much there is.
 
 **Why it may matter here.** Stage 13e's tundra never reached camouflage alone, and stage 13a's split suggests hunters can get stuck low on that gene. Extra mutation under winter's stress might get them unstuck, or it might just damage what's already working. That's untested.
+
+**Update, stage 15c:** the pattern didn't change where the gene ended up, while doubling the amount took tundra from never to about 30 updates. Worlds with mutation zones also lasted far better than even mutation, which stage 15d tests on fresh seeds.
 
 **Not in this stage:** mutating the genes of living adults. Today a gene change only reaches the next generation through a birth, and changing an adult's genes mid-life is a different question, which I'd test separately if this one shows anything.
 

@@ -52,3 +52,7 @@ What this doesn't show:
 
 Crossing also seems to slow meadow on K's seeds: 494 against 83 with none, while L's seeds show 35 against 38. With so much chance in when a sweep starts, I wouldn't read much into one pair.
 
+**Stage 15a qualifies this:** at half the price, 0.05, tundra alone reaches the gene on both sets (updates 165 and 51), and its worlds last in 0.750 and 1.000. So "never" here is at a price of 0.10.
+
+**Stage 15c qualifies this further:** at twice the mutation, tundra alone reaches the gene in about 30 updates. So "never" here is at a price of 0.10 and normal mutation.
+

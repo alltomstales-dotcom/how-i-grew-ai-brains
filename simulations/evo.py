@@ -104,6 +104,10 @@ class EvoConfig(WorldConfig):
     stealth_radius: int = 0  # > 0: a grazer sees a hunter only within this many cells (Stage 10f)
     camo_gene: bool = False  # a grazer sees a hunter only within camo_radius of that hunter's gene (Stage 13a)
     camo_cost: float = 0.0  # energy per step for a hunter's camo gene 1
+    camo_winter: bool = False  # the camo gene works, and costs, only in winter (Stage 15a)
+    mut_even: float = 1.0  # every child's mutation, as a multiple of gene_sigma (Stage 15c)
+    mut_winter: float = 1.0  # the multiple for children born in winter
+    mut_zone: float = 1.0  # the multiple for children born in every fourth column of cells
     tiny_brain: bool = False  # the small network, so each animal can hold its own (Stage 14a)
     fat_sense: bool = False  # animals can see how much energy visible prey hold (Stage 5b)
     stored_meals: bool = False  # a catch is worth what the prey stored, times meal_share, not a fixed catch_energy (Stage 5b)
@@ -525,6 +529,36 @@ class TinyWinterConfig(TinyStealthConfig):
 
 
 @dataclass(frozen=True)
+class CamoWinterTundraConfig(CamoTundraConfig):
+    """Stage 15a: the gene works, and costs, only in winter."""
+    camo_winter: bool = True
+
+
+@dataclass(frozen=True)
+class CamoHalfTundraConfig(CamoTundraConfig):
+    """Stage 15a's control: a constant gene at the same average cost."""
+    camo_cost: float = 0.05
+
+
+@dataclass(frozen=True)
+class MutWinterTundraConfig(CamoTundraConfig):
+    """Stage 15c: children mutate more in winter."""
+    mut_winter: float = 3.0
+
+
+@dataclass(frozen=True)
+class MutZoneTundraConfig(CamoTundraConfig):
+    """Stage 15c: children mutate more in every fourth column of cells."""
+    mut_zone: float = 5.0
+
+
+@dataclass(frozen=True)
+class MutEvenTundraConfig(CamoTundraConfig):
+    """Stage 15c's control: the same average mutation, everywhere, all year."""
+    mut_even: float = 2.0
+
+
+@dataclass(frozen=True)
 class OmniConfig(EvoConfig):
     """Stage 9a: hunters keep their diet gene's share of every catch, and the rest of a grazer's share of plants."""
     omnivore: bool = True
@@ -660,6 +694,13 @@ class GenePool(NamedTuple):
 
 def sight_radius(g: jax.Array) -> jax.Array:
     return 1 + jnp.floor(3 * g + 0.5).astype(jnp.int32)
+
+
+def in_winter(cfg: EvoConfig, t) -> jax.Array:
+    """The second half of every 2 x winter_len steps; never, in a world without winters."""
+    if not cfg.winter_len:
+        return jnp.bool_(False)
+    return (t // cfg.winter_len) % 2 == 1
 
 
 def is_night(cfg: EvoConfig, t) -> jax.Array:
@@ -900,6 +941,7 @@ def _climb(cfg: EvoConfig, before: Species, after: Species) -> Species:
 CAMO_RADII = (1, 2, 3, 4)
 
 
+
 def camo_radius(g):
     """How close a grazer must be to see a hunter with this camo gene: 4 cells at gene 0, the next cell from about 0.83."""
     return 4 - jnp.floor(3 * jnp.asarray(g) + 0.5).astype(jnp.int32)
@@ -929,6 +971,8 @@ def observe(cfg: EvoConfig, state: State) -> tuple[jax.Array, jax.Array]:
 
     if cfg.camo_gene:  # one map of hunters for each radius they show from
         hunter_radius = camo_radius(state.pred.genes[:, 6])
+        if cfg.camo_winter:
+            hunter_radius = jnp.where(in_winter(cfg, state.t), hunter_radius, CAMO_RADII[-1])
         by_radius = jnp.stack([pp._count_map(state.pred._replace(alive=state.pred.alive & (hunter_radius == r)), cfg.size)
                                for r in CAMO_RADII], axis=-1)
 
@@ -1167,7 +1211,7 @@ def _mates(cfg: EvoConfig, sp: Species) -> tuple[jax.Array, jax.Array]:
     return d[jnp.arange(n), mate] <= cfg.mate_radius, mate
 
 
-def _reproduce(cfg: EvoConfig, key, sp: Species, repro_energy: float) -> tuple[Species, jax.Array, jax.Array]:
+def _reproduce(cfg: EvoConfig, key, sp: Species, repro_energy: float, t=0) -> tuple[Species, jax.Array, jax.Array]:
     """Like predprey.reproduce, but each animal's threshold comes from its breed
     gene and the child inherits mutated genes, generation + 1 and the tag. With
     mating on, a ready animal also needs a mate nearby, and the child takes each
@@ -1186,7 +1230,8 @@ def _reproduce(cfg: EvoConfig, key, sp: Species, repro_energy: float) -> tuple[S
     free_idx = jnp.nonzero(free, size=n, fill_value=0)[0]
     target = jnp.where(can, free_idx[jnp.clip(rank, 0, n - 1)], n)  # n = dropped
     half = (sp.energy - cfg.birth_cost) / 2
-    child_genes = mutate(key, inherited, cfg.gene_sigma)
+    factor = cfg.mut_even * jnp.where(in_winter(cfg, t), cfg.mut_winter, 1.0) * jnp.where(sp.pos[:, 0] % 4 == 0, cfg.mut_zone, 1.0)
+    child_genes = mutate(key, inherited, cfg.gene_sigma * factor[:, None])
     return Species(
         pos=sp.pos.at[target].set(sp.pos, mode="drop"),
         energy=jnp.where(can, half, sp.energy).at[target].set(half, mode="drop"),
@@ -1313,7 +1358,8 @@ def advance(cfg: EvoConfig, key: jax.Array, state: State, prey_act, pred_act) ->
     pred = _metabolise(cfg, pred, cfg.pred_energy_cap, cfg.pred_base_cost, cfg.pred_speed_cost if cfg.pred_speed_cost >= 0 else None,
                        cfg.pred_size_cost if cfg.pred_size_cost >= 0 else None)
     if cfg.camo_gene:
-        pred = pred._replace(energy=pred.energy - cfg.camo_cost * pred.genes[:, 6] * pred.alive)
+        on = in_winter(cfg, state.t) if cfg.camo_winter else True
+        pred = pred._replace(energy=pred.energy - cfg.camo_cost * pred.genes[:, 6] * pred.alive * on)
 
     # 5. Starvation. Deaths are recorded before any slot is reused.
     prey = prey._replace(alive=prey.alive & (prey.energy > 0))
@@ -1322,8 +1368,8 @@ def advance(cfg: EvoConfig, key: jax.Array, state: State, prey_act, pred_act) ->
     pred_died = pred_was & ~pred.alive
 
     # 6. Reproduction with inherited, mutated genes.
-    prey, prey_born, prey_parent = _reproduce(cfg, k_rprey, prey, cfg.prey_repro_energy)
-    pred, pred_born, pred_parent = _reproduce(cfg, k_rpred, pred, cfg.pred_repro_energy)
+    prey, prey_born, prey_parent = _reproduce(cfg, k_rprey, prey, cfg.prey_repro_energy, state.t)
+    pred, pred_born, pred_parent = _reproduce(cfg, k_rpred, pred, cfg.pred_repro_energy, state.t)
 
     # 7. Plants die, seed and germinate.
     plant, plant_genes, bitten = _plants(cfg, k_plant, plant, state.plant_genes, terrain == 0, bitten,

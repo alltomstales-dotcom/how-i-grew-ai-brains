@@ -91,10 +91,12 @@ bodies far bigger than their prey's. [Finding out why](docs/specs/2026-11-01-bur
 
 **Now, camouflage as a gene.** [Hunters that start out hiding nothing](docs/specs/2026-11-01-camouflage-gene-design.md) evolve to hide when it's free. At a high price, one seed gets there and the other never starts, and [at a lower one](docs/specs/2026-11-01-camouflage-price-design.md) every run does. On the continents it [spreads meadow, forest, tundra](docs/specs/2026-11-01-camouflage-climate-design.md) on both sets, the direction animals walk, and [with crossing cut](docs/specs/2026-11-01-no-crossing-design.md), tundra's hunters never reach it at all. And [swapping brains between climates](docs/specs/2026-11-01-transplant-design.md) shows climate shapes bodies far more clearly than brains.
 
-**Now, individual brains.** Until now each species has shared one brain. [Giving every animal its own, and letting children inherit what parents learned](docs/specs/2026-11-01-individual-brains-design.md), did harm in its first test, and [evolution turned learning down](docs/specs/2026-11-01-heritable-learning-design.md). [Over about 400 generations](docs/specs/2026-11-01-long-inheritance-design.md) its catches kept rising, until [hunters faced the same grazers](docs/specs/2026-11-01-head-to-head-design.md) and it turned out both species had got worse. [What's known about genes, memory and learning](docs/specs/2026-11-01-memory-and-inheritance-review.md) sets the plan after it: genes that switch on with the seasons, environmental mutation, culture, and a compressed genome.
+**Now, individual brains.** Until now each species has shared one brain. [Giving every animal its own, and letting children inherit what parents learned](docs/specs/2026-11-01-individual-brains-design.md), did harm in its first test, and [evolution turned learning down](docs/specs/2026-11-01-heritable-learning-design.md). [Over about 400 generations](docs/specs/2026-11-01-long-inheritance-design.md) its catches kept rising, until [hunters faced the same grazers](docs/specs/2026-11-01-head-to-head-design.md) and it turned out both species had got worse.
+
+**Now, what tundra was missing.** [A gene that switches on in winter](docs/specs/2026-11-01-winter-camouflage-design.md) did no better than a cheaper constant one. [Twice the mutation](docs/specs/2026-11-01-environmental-mutation-design.md) takes tundra from never reaching camouflage to about 30 updates, so it was short of variation, not incapable. [What's known about genes, memory and learning](docs/specs/2026-11-01-memory-and-inheritance-review.md) sets the plan after it: genes that switch on with the seasons, environmental mutation, culture, and a compressed genome.
 [What would you change?](SUGGESTIONS.md)
 
-**So far, [14 stages pass and 35 fail](docs/results.md).** The failures have often taught more than the passes.
+**So far, [14 stages pass and 37 fail](docs/results.md).** The failures have often taught more than the passes.
 
 ## Watch it
 
@@ -128,6 +130,7 @@ The series is on [NeatScienceStuff](https://www.youtube.com/@NeatScienceStuff), 
 | 13 | I gave my AI creatures three different worlds. Evolution proved me wrong. | coming Nov 10 |
 | 14 | I made size matter. My AI hunters grew bigger, and died out. | coming Nov 11 |
 | 15 | My AI hunters evolved camouflage. One world never could. | coming Nov 12 |
+| 16 | My AI creatures inherited what their parents learned. It made them worse. | coming Nov 13 |
 <!-- videos:end -->
 
 ## Build this with us

@@ -315,9 +315,10 @@ share beats the other's by at least 0.10, and beats its own at 0-10 steps by at 
 
 **The plan after stage 14c (2026-11-01).** From a review of what's known about genes, memory and learning, at `docs/specs/2026-11-01-memory-and-inheritance-review.md`. Each stage gets its bars fixed in a spec before it runs.
 
-- **Stage 15a, conditional expression.** A camouflage gene expressed only in winter, costing energy only then. Can tundra evolve it alone, which it didn't in stage 13e?
+- **Stage 15a, conditional expression (FAIL on two of three bars, 2026-11-01).** A camouflage gene that works and costs only in winter evolves in tundra alone (0.902, 0.909), but no better than a constant gene at the same average cost (0.898, 0.912), and it carries the world far worse (0.188, 0.031 against 0.750, 1.000). So tundra can get there alone, and price was the barrier, not timing. Spec: `docs/specs/2026-11-01-winter-camouflage-design.md`.
 - **Stage 15b, a season input.** Does knowing the season reduce the harm Lamarckian inheritance does in winter?
-- **Stage 15c, environmental mutation.** Tom's idea. Mutation rising by place, season or a parent's hunger, against controls with the same average mutation spread evenly. Can tundra reach camouflage alone, and does it beat even mutation?
+- **Stage 15c, environmental mutation (FAIL on bar 3, 2026-11-01).** Tom's idea. Twice the mutation takes isolated tundra from never reaching camouflage to about 30 updates, so it was short of variation, not incapable. The pattern doesn't change the gene (0.86 to 0.89 against 0.90). But worlds with mutation zones last far better than even mutation (0.969, 0.656 against 0.219, 0.000), which wasn't a bar. Spec: `docs/specs/2026-11-01-environmental-mutation-design.md`.
+- **Stage 15d, do mutation zones really keep worlds alive? (built 2026-11-01, training).** Stage 15c's surprise, with its own bar, on fresh seeds. Spec: `docs/specs/2026-11-01-mutation-zones-design.md`.
 - **Stage 16, culture.** Juveniles learn from a parent in early life, and no weights are inherited. This is the realistic form of Tom's idea.
 - **Stage 17, a compressed genome.** A small genome decoded into a brain, with evolved learning rules. The first rung that's recursive at all, and still bounded by the simulation.
 

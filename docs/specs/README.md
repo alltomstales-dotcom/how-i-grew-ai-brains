@@ -55,6 +55,9 @@ replaced with neutral wording; the engineering and the results are unchanged.
 | [Long inheritance](2026-11-01-long-inheritance-design.md) | 14c: does inherited knowledge build up, given time? | FAIL on all three bars |
 | [Head to head](2026-11-01-head-to-head-design.md) | 14d: did Lamarckian hunters get better, or did their grazers get easier? | FAIL: hunters got worse, and grazers got easier |
 | [Genes, memory and learning](2026-11-01-memory-and-inheritance-review.md) | A review of the biology, and the plan after 14c | not a test: a review with references |
+| [Winter camouflage](2026-11-01-winter-camouflage-design.md) | 15a: can a gene that switches on in winter do what a constant one can't? | FAIL on two of three bars: price, not timing |
+| [Environmental mutation](2026-11-01-environmental-mutation-design.md) | 15c: does it matter where and when mutation happens? | FAIL on the pattern; more mutation unlocks tundra |
+| [Mutation zones](2026-11-01-mutation-zones-design.md) | 15d: do mutation zones really keep worlds alive? | training |
 
 The league and predator-stall work of Stage 3b is written up in the [roadmap](../roadmap.md).
 A summary of all of it is in [results.md](../results.md).
