@@ -6,6 +6,7 @@ mode "lamarck": learning in life; a child gets its parent's brain as it stands, 
 mode "blank": a child gets the blank brain, and nothing else (Stage 16).
 mode "watch": the same, then for its first steps a child learns what its parent just did in the parent's situation, if the parent is near.
 mode "teach": the same, but it learns what its parent's brain would do in the child's own situation, and the parent pays for each lesson.
+Stage 19, anchoring: in anchored worlds every grazer born takes a brain drawn from a frozen pool of trained grazers, not its parent's.
 """
 from __future__ import annotations
 
@@ -21,6 +22,7 @@ from agents.networks import init_params
 CULTURE = ("blank", "watch", "teach")
 MODES = ("darwin", "baldwin", "lamarck") + CULTURE
 BLANK_SEED = 1616
+SUBSPACE_SEED = 1717
 
 
 @dataclass(frozen=True)
@@ -36,6 +38,8 @@ class IndivConfig:
     childhood: int = 0  # Stage 16: steps after birth with lessons
     teach_cost: float = 0.0  # Stage 16: energy a parent pays per lesson
     innate: bool = False  # Stage 16b: a culture child is born with its parent's birth brain, not the blank one
+    subspace: int = 0  # Stage 17: mutation only along this many fixed random directions in weight space (0 = all weights)
+    anchor_frac: float = 0.0  # Stage 19, grazers only: the first round(frac x worlds) worlds are anchored, and every grazer born there takes a pool brain
 
 
 class Pop(NamedTuple):
@@ -146,31 +150,74 @@ def make_lesson(net, view: int, size: int):
     return lesson
 
 
+def _subspace_noisy(tree, key, sigma, d: int):
+    """Mutation along d fixed random directions, the same directions for every animal and run.
+    Each weight's mutation has standard deviation sigma, as in _noisy."""
+    leaves, t = jax.tree.flatten(tree)
+    lead = leaves[0].shape[:2]
+    sizes = [int(x[0, 0].size) for x in leaves]
+    basis = jax.random.normal(jax.random.PRNGKey(SUBSPACE_SEED), (d, sum(sizes))) / jnp.sqrt(d)
+    z = jax.random.normal(key, lead + (d,))
+    flat = sigma * (z @ basis)
+    out, at = [], 0
+    for x, n in zip(leaves, sizes):
+        out.append(x + flat[..., at:at + n].reshape(x.shape))
+        at += n
+    return jax.tree.unflatten(t, out)
+
+
 def inherit(pop: Pop, parent, key, cfg: IndivConfig) -> Pop:
     """Newborns (slots whose parent isn't themselves) take a brain from their parent."""
     e, n = parent.shape
     born = parent != jnp.arange(n)[None, :]
     source = pop.params if cfg.mode == "lamarck" else pop.birth
-    child = _noisy(_take(source, parent), key, cfg.sigma)
+    if cfg.subspace:
+        child = _subspace_noisy(_take(source, parent), key, cfg.sigma, cfg.subspace)
+    else:
+        child = _noisy(_take(source, parent), key, cfg.sigma)
     return Pop(_where(born, child, pop.params), _where(born, child, pop.birth))
 
 
-def redraw(pop: Pop, was_alive, done, key, cfg: IndivConfig) -> Pop:
-    """The animals of a world that just ended take brains from living animals in any world."""
+def anchored_worlds(e: int, frac: float):
+    """Stage 19: which worlds are anchored, fixed by index: the first round(frac x e)."""
+    return jnp.arange(e) < int(round(frac * e))
+
+
+def anchor(pop: Pop, mask, pool, key) -> Pop:
+    """Stage 19: slots in mask (E, N) take a brain drawn at random from pool (a pytree with leading axis P), unmutated.
+    The pool is frozen, so anchored grazers never evolve their brains."""
+    e, n = mask.shape
+    count = jax.tree.leaves(pool)[0].shape[0]
+    index = jax.random.randint(key, (e, n), 0, count)
+    drawn = jax.tree.map(lambda x: x[index], pool)
+    return Pop(_where(mask, drawn, pop.params), _where(mask, drawn, pop.birth))
+
+
+def redraw(pop: Pop, was_alive, done, key, cfg: IndivConfig, allowed=None) -> Pop:
+    """The animals of a world that just ended take brains from living animals in any world.
+    allowed (E,) bool, Stage 19: draw only from these worlds (unanchored grazers never take an anchored grazer's pool brain)."""
     e, n = was_alive.shape
     weights = was_alive.reshape(-1).astype(jnp.float32)
-    index = jax.random.categorical(key, jnp.log(jnp.where(weights.sum() > 0, weights, 1.0) + 1e-12), shape=(e, n))
+    fallback = 1.0
+    if allowed is not None:
+        fallback = jnp.broadcast_to(allowed[:, None], (e, n)).reshape(-1).astype(jnp.float32)
+        weights = weights * fallback
+    index = jax.random.categorical(key, jnp.log(jnp.where(weights.sum() > 0, weights, fallback) + 1e-12), shape=(e, n))
     source = pop.params if cfg.mode == "lamarck" or (cfg.mode in CULTURE and not cfg.innate) else pop.birth
     drawn = jax.tree.map(lambda x: x.reshape((e * n,) + x.shape[2:])[index], source)
     mask = jnp.broadcast_to(done[:, None], (e, n))
     return Pop(_where(mask, drawn, pop.params), _where(mask, drawn, pop.birth))
 
 
-def make_step(net, world, wcfg, cfg: IndivConfig, restart: bool = True, fixed_pred=None, prey_cfg: IndivConfig | None = None, blank=None):
+def make_step(net, world, wcfg, cfg: IndivConfig, restart: bool = True, fixed_pred=None, prey_cfg: IndivConfig | None = None, blank=None, anchor_pool=None):
     """One step of every world: act, step, learn, inherit. restart False: worlds carry on past an extinction, for evaluation.
     fixed_pred: a hand-written hunter policy, with hunters' brains left alone.
-    prey_cfg: grazers' rule, when it differs from hunters'. blank: the blank brain, for culture modes."""
+    prey_cfg: grazers' rule, when it differs from hunters'. blank: the blank brain, for culture modes.
+    anchor_pool: Stage 19, frozen grazer brains (leading axis P) for anchored worlds, with prey_cfg.anchor_frac > 0."""
     prey_cfg = cfg if prey_cfg is None else prey_cfg
+    anchoring = prey_cfg.anchor_frac > 0
+    if anchoring and (anchor_pool is None or prey_cfg.mode in CULTURE):
+        raise ValueError("anchor_frac needs anchor_pool, and grazers that inherit brains (not a culture mode)")
     lesson = make_lesson(net, wcfg.view, wcfg.size)
     apply_one = lambda p, o: net.apply(p, o)
     apply_all = jax.vmap(jax.vmap(apply_one))
@@ -243,9 +290,14 @@ def make_step(net, world, wcfg, cfg: IndivConfig, restart: bool = True, fixed_pr
             else:
                 pred = learn(pred, carry.pred_obs, pred_a, pred_obs, before.pred, res.state.pred, res.pred_done, res.info.pred_parent, world_done)
                 pred = inherit(pred, res.info.pred_parent, k_i2, cfg)
+        anch = anchored_worlds(world_done.shape[0], prey_cfg.anchor_frac) if anchoring else None
         if restart:
-            prey = redraw(prey, before.prey.alive, world_done, k_r1, prey_cfg)
+            prey = redraw(prey, before.prey.alive, world_done, k_r1, prey_cfg, allowed=None if anch is None else ~anch)
             pred = redraw(pred, before.pred.alive, world_done, k_r2, cfg)
+        if anchoring:
+            e, n = res.info.prey_parent.shape
+            renewed = (res.info.prey_parent != jnp.arange(n)[None, :]) | world_done[:, None]
+            prey = anchor(prey, anch[:, None] & renewed, anchor_pool, jax.random.fold_in(k_i1, 19))
             if prey_kin is not None:
                 prey_kin = prey_kin._replace(teacher=jnp.where(world_done[:, None], -1, prey_kin.teacher))
             if pred_kin is not None:
@@ -267,3 +319,16 @@ def spread(pop: Pop, alive) -> dict:
         moved = moved + (((x - b) ** 2) * m).sum() / count
         size = size + mean.size
     return {"weight_spread": jnp.sqrt(var / size), "weight_moved": jnp.sqrt(moved / size)}
+
+
+def from_pool(params, pool, tol: float = 1e-3):
+    """Stage 19 check: (E, N) bool, whether each slot's brain is one of the pool's, by a fixed random 8-number fingerprint.
+    Different brains differ by about 1 or more per fingerprint number; a copied brain matches to rounding."""
+    leaves, pleaves = jax.tree.leaves(params), jax.tree.leaves(pool)
+    e, n = leaves[0].shape[:2]
+    flat = jnp.concatenate([x.reshape(e, n, -1) for x in leaves], -1)
+    pflat = jnp.concatenate([x.reshape(x.shape[0], -1) for x in pleaves], -1)
+    proj = jax.random.normal(jax.random.PRNGKey(1919), (flat.shape[-1], 8))
+    a = jnp.matmul(flat, proj, precision=jax.lax.Precision.HIGHEST)
+    b = jnp.matmul(pflat, proj, precision=jax.lax.Precision.HIGHEST)
+    return jax.lax.map(lambda w: jnp.abs(w[:, None, :] - b[None]).max(-1).min(-1) < tol, a)

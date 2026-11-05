@@ -61,9 +61,14 @@ replaced with neutral wording; the engineering and the results are unchanged.
 | [Mutation mix](2026-11-01-mutation-mix-design.md) | 15e: is it the place, or the mix? | bar missed; two sets couldn't settle it |
 | [Place or mix](2026-11-01-place-or-mix-design.md) | 15f: place or mix, with enough sets to tell | FAIL: it's the mix |
 | [Culture](2026-11-02-culture-design.md) | 16: should parents teach, or should the young watch? | FAIL on bars 1 and 3, a tie on bar 2 |
-| [Genes plus lessons](2026-11-02-genes-plus-lessons-design.md) | 16b: born with instincts, then taught | training |
+| [Genes plus lessons](2026-11-02-genes-plus-lessons-design.md) | 16b: born with instincts, then taught | FAIL on bar 1, a tie on bar 2: strong lessons overwrite instincts |
+| [Gentle lessons](2026-11-02-gentle-lessons-design.md) | 16c: gentle lessons on top of instincts | FAIL on bar 1, a tie on bar 2 |
+| [Evolution alone](2026-11-03-evolution-alone-design.md) | 17: can evolution alone build a hunter, and how small can its genome be? | FAIL on all three bars |
 | [Mealworm](2026-11-02-mealworm-design.md) | 18a: is the brain random garbage, and does size matter? | bars 1 and 3 pass, bar 2 fails |
 | [Slow, blind ambush](2026-11-02-slow-blind-ambush-design.md) | 18b: does an ambush predator evolve poor sight and slow legs? | FAIL on the living |
+| [Hall of fame](2026-11-04-hall-of-fame-design.md) | 19: was the problem the opponent? Evolution alone against grazers that stay trained | FAIL on all three bars, at about 1.5x random |
+| [Visible selection](2026-11-04-visible-selection-design.md) | 20: was stage 19's plateau the search, or a selection that couldn't see better brains? | FAIL on bar 1, bars 2 and 3 pass; with bodies frozen the plateau didn't appear |
+| [Dynasties](2026-11-04-dynasties-design.md) | A lineage tracer: named family lines, exact causes of death, and replays to follow them | not a test: a tool |
 
 The league and predator-stall work of Stage 3b is written up in the [roadmap](../roadmap.md).
 A summary of all of it is in [results.md](../results.md).

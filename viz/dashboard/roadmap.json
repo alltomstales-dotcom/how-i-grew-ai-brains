@@ -1,6 +1,6 @@
 {
  "title": "autolearn — growing intelligence in simulated worlds",
- "updated": "2026-11-02",
+ "updated": "2026-11-03",
  "summary": "Animals learn by trial and error (reinforcement learning) and their bodies evolve, in worlds that run entirely on a DGX Spark's GPU. Nobody programs hunting, fleeing or foraging. We set the rules of the world and the goal (stay alive, have offspring), then watch what emerges.",
  "explainer": [
   "Inspiration: David Silver and Lasse Espeholt's 'Crucible' idea. Instead of learning from human data, agents learn from experience in a simulated world, so they can, in principle, keep improving without limit.",
@@ -9,7 +9,7 @@
   "Speed: the world, the brains and the learning are all compiled together in JAX. 1,024 worlds run in parallel on one GPU, at about 5,200 world-steps per second while learning and about 19,000 without it.",
   "Honesty: every stage has a test that can fail. Each test compares against controls, such as random brains, founder bodies or one gene changed at a time, so a pass means something."
  ],
- "now": "Culture failed. With no wiring passed down, children who watched or were taught by a parent hunted no better than random against grazers born with inherited brains, and teaching tied with watching. What the founders knew went with them. Viewers' tests before that: the brain isn't random garbage (3.5 to 4x random), a brain 16 times bigger adds only 4 to 7%, and slow, blind ambushers lost their sight but never made waiting pay. Next: genes plus lessons, the way real animals do it.",
+ "now": "Evolution alone, given strong opponents, got a little further. Hunters evolved from random brains against grazers that kept trained brains reached about 1.5x random against trained grazers, against 1.2x when both sides evolved from scratch, and kept some of it against trained grazers they had never met. But the gain stopped early, at about half of what trained hunters catch, and mixing in easy worlds threw most of it away. Before that, evolution alone with co-evolving grazers built hunters that only worked at home, and culture never beat genes.",
  "stages": [
   {
    "id": 1,

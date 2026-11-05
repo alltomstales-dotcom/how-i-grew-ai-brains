@@ -96,7 +96,9 @@ bodies far bigger than their prey's. [Finding out why](docs/specs/2026-11-01-bur
 **Now, what tundra was missing.** [A gene that switches on in winter](docs/specs/2026-11-01-winter-camouflage-design.md) did no better than a cheaper constant one. [Twice the mutation](docs/specs/2026-11-01-environmental-mutation-design.md) takes tundra from never reaching camouflage to about 30 updates, so it was short of variation, not incapable. [What's known about genes, memory and learning](docs/specs/2026-11-01-memory-and-inheritance-review.md) sets the plan after it: genes that switch on with the seasons, environmental mutation, culture, and a compressed genome.
 [What would you change?](SUGGESTIONS.md)
 
-**So far, [15 stages pass and 41 fail](docs/results.md), with one mixed.** The failures have often taught more than the passes.
+**Now, culture and evolution alone.** Children who only [learned from a parent](docs/specs/2026-11-02-culture-design.md) hunted at random level, [strong lessons on top of instincts](docs/specs/2026-11-02-genes-plus-lessons-design.md) wrecked them, and [gentle ones](docs/specs/2026-11-02-gentle-lessons-design.md) added nothing, and watching even cost about 10%. [Evolution with no training at all](docs/specs/2026-11-03-evolution-alone-design.md) built hunters that looked good at home and caught about 1.2x random against trained grazers. [Against grazers that stayed trained](docs/specs/2026-11-04-hall-of-fame-design.md) they reached about 1.5x and then stalled. [Making better hunters pay](docs/specs/2026-11-04-visible-selection-design.md) made them worse, but freezing bodies, added only as a method fix, and then the stall didn't appear: with bodies frozen, evolution alone reached about 2x random on grazers it had never met.
+
+**So far, [15 stages pass and 46 fail](docs/results.md), with one mixed.** The failures have often taught more than the passes.
 
 ## Watch it
 

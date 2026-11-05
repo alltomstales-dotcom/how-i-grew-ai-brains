@@ -117,3 +117,31 @@ def make_net(world, cfg, memory: int = 0):
     from agents.networks import ActorCritic
     return ActorCritic(num_actions=num_actions(world, cfg), memory=memory, brain=getattr(cfg, "brains", False),
                        tiny=getattr(cfg, "tiny_brain", False), scale=getattr(cfg, "brain_scale", 1))
+
+
+def world_set(cfg, pairs):
+    """Stage 20: a config with fields changed from "key=value" strings (repeatable --world-set), each value read as its field's type.
+    For example ["pred_base_cost=0.1", "gene_sigma=0"]. An unknown field is an error, so a typo can't silently run the usual world."""
+    import dataclasses
+    import json
+    changes = {}
+    for pair in pairs or ():
+        key, sep, raw = pair.partition("=")
+        key = key.strip()
+        if not sep or not hasattr(cfg, key):
+            raise ValueError(f"--world-set {pair!r}: expected key=value with a field of {type(cfg).__name__}")
+        old, raw = getattr(cfg, key), raw.strip()
+        if isinstance(old, bool):
+            if raw.lower() not in ("true", "false", "1", "0"):
+                raise ValueError(f"--world-set {pair!r}: {key} is true or false")
+            value = raw.lower() in ("true", "1")
+        elif isinstance(old, int):
+            value = int(raw)
+        elif isinstance(old, float):
+            value = float(raw)
+        elif isinstance(old, tuple):
+            value = tuple(json.loads(raw))
+        else:
+            value = raw
+        changes[key] = value
+    return dataclasses.replace(cfg, **changes) if changes else cfg

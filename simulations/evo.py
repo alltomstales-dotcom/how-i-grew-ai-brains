@@ -1146,13 +1146,31 @@ def _plant_value(cfg: EvoConfig, t):
     return jnp.where((t // cfg.winter_len) % 2 == 0, 1.0, cfg.winter_value)
 
 
-def _metabolise(cfg: EvoConfig, sp: Species, cap: float, base: float = 1.0, speed_cost: float | None = None, size_cost: float | None = None) -> Species:
-    radius = sight_radius(sp.genes[:, 1])
-    cost = base + (cfg.speed_cost if speed_cost is None else speed_cost) * sp.genes[:, 0] ** 2 + cfg.sight_cost * (radius - 1) / 3
+def _upkeep(cfg: EvoConfig, genes, base: float = 1.0, speed_cost: float | None = None, size_cost: float | None = None):
+    """Energy an animal with these genes pays every step for its body (genes (..., ANIMAL_GENES))."""
+    radius = sight_radius(genes[..., 1])
+    cost = base + (cfg.speed_cost if speed_cost is None else speed_cost) * genes[..., 0] ** 2 + cfg.sight_cost * (radius - 1) / 3
     if cfg.sizes:
-        cost = cost + (cfg.size_cost if size_cost is None else size_cost) * sp.genes[:, 3]
+        cost = cost + (cfg.size_cost if size_cost is None else size_cost) * genes[..., 3]
     if cfg.brains:
-        cost = cost + cfg.brain_cost * sp.genes[:, 4]
+        cost = cost + cfg.brain_cost * genes[..., 4]
+    return cost
+
+
+def hunter_upkeep(cfg: EvoConfig, state: State) -> jax.Array:
+    """Stage 20: what each hunter slot pays per step for its body, as step() charges it (base, speed, sight, size, brain, camo).
+    Leading axes as state.pred; not masked by alive. Signals, climbing and walking costs depend on actions and aren't included."""
+    pred = state.pred
+    cost = _upkeep(cfg, pred.genes, cfg.pred_base_cost, cfg.pred_speed_cost if cfg.pred_speed_cost >= 0 else None,
+                   cfg.pred_size_cost if cfg.pred_size_cost >= 0 else None)
+    if cfg.camo_gene:
+        on = in_winter(cfg, state.t) if cfg.camo_winter else True
+        cost = cost + cfg.camo_cost * pred.genes[..., 6] * jnp.expand_dims(jnp.asarray(on), -1)
+    return cost
+
+
+def _metabolise(cfg: EvoConfig, sp: Species, cap: float, base: float = 1.0, speed_cost: float | None = None, size_cost: float | None = None) -> Species:
+    cost = _upkeep(cfg, sp.genes, base, speed_cost, size_cost)
     energy = jnp.minimum(sp.energy - cost * sp.alive, cap)
     return sp._replace(energy=jnp.where(sp.alive, energy, 0.0))
 
