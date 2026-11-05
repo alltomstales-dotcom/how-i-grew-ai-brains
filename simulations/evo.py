@@ -56,6 +56,8 @@ class EvoConfig(WorldConfig):
     walls: int = 0  # straight wall segments drawn at each reset
     wall_len: int = 6
     burrows: int = 0  # single cells prey can enter and predators cannot
+    office: int = 0  # > 0: Stage 22, each reset draws one of this many office floor plans (simulations/office.py); 0 is off
+    office_seed: int = 0  # the first office layout's seed: 0 trains, 1000 is the held-out test bank
     day_len: int = 0  # steps per day (0 = always day); at night every animal sees only its neighbours
     night_frac: float = 0.3  # the last part of each day that is night
     season_len: int = 0  # steps per season (0 = none); the map's halves take turns being in season
@@ -115,6 +117,25 @@ class EvoConfig(WorldConfig):
     stored_meals: bool = False  # a catch is worth what the prey stored, times meal_share, not a fixed catch_energy (Stage 5b)
     meal_share: float = 1.25  # meant to match catch_energy 25 with prey at about 20; prey eaten held about 9.5, so about 12 (5b v1)
     brain_tax: float = 0.0  # an animal with brain gene g keeps 1 - brain_tax * g of every meal, so rich and poor pay the same share (Stage 7b)
+    # Stage 21, alarm calls (spec 2026-11-04-alarm-calls-design.md). Only grazers call: 10 actions for both species, but a
+    # hunter's call bit does nothing and costs nothing. A grazer hears other grazers' last-step calls across its view
+    # (wrapped Chebyshev radius view // 2), never its own, in one extra channel.
+    alarm: bool = False
+    eavesdrop: bool = False  # hunters' extra channel carries the grazer calls they could hear; off, it is all zeros
+    prey_deaf: bool = False  # grazers' extra channel is all zeros (stage 21's A2 arm, and the muted test)
+    kin_share: float = 0.0  # a grazer's reward adds this times each death penalty paid by a grazer of its dynasty within hearing
+    dynasties: bool = False  # every founder starts its own dynasty (tag = slot + 1) at each reset, whatever the pool carries
+    oracle_call: bool = False  # Stage 21b: a grazer's call bit is "a living hunter within 1 cell" before it moves; its call output is ignored, the cost is paid
+    prey_no_upkeep: bool = False  # Stage 22b (evaluation): grazers pay no body upkeep, so they cannot starve; the cap still applies
+    # Stage 23, packs with cheaters (spec 2026-11-05-pack-cheaters-design.md). With `effort` set, a hunter's gene 5 (the old diet
+    # slot, inert and unobserved with omnivore off) is its effort; every other gene of both species is held at the founder body.
+    # A pack (pack_size >= 2 assigned hunters) catches with chance 1 - exp(-effort_k * summed effort); the meal of
+    # pack_size * catch_energy is split equally ("equal") or by effort ("prop"); effort costs effort_cost * e a step.
+    # "neutral" mutates the gene the same way but uses .5 for it everywhere (catch, cost, split). "" is off.
+    effort: str = ""
+    effort_cost: float = 0.1
+    effort_k: float = 2.0
+    breed_random: bool = False  # Stage 23: free slots go to ready parents in a random order each step, not slot order
 
 
 @dataclass(frozen=True)
@@ -651,6 +672,55 @@ class FatPreyFixedConfig(EvoConfig):
 
 
 @dataclass(frozen=True)
+class AlarmConfig(LastingStealthConfig):
+    """Stage 21: grazers can call; a grazer sees a hunter only from the next cell but hears calls 4 cells away, so a
+    neighbour's call can carry news. Bodies and plants are frozen, so only learned behaviour changes."""
+    alarm: bool = True
+    dynasties: bool = True
+    gene_sigma: float = 0.0
+    founder_noise: float = 0.0
+    plant_sigma: float = 0.0
+
+
+@dataclass(frozen=True)
+class OfficeHomeConfig(LastingStealthConfig):
+    """Stage 22's home: stage 10f's open ground with bodies and plants frozen, so only learned behaviour changes."""
+    gene_sigma: float = 0.0
+    founder_noise: float = 0.0
+    plant_sigma: float = 0.0
+
+
+@dataclass(frozen=True)
+class OfficeConfig(OfficeHomeConfig):
+    """Stage 22: the same world inside an office of rooms, corridors and doorways; 16 training layouts (seeds 0-15)."""
+    office: int = 16
+    office_seed: int = 0
+
+
+@dataclass(frozen=True)
+class PackEffortEqualConfig(LastingStealthConfig):
+    """Stage 23: stage 10f's world with packs of two, a heritable effort gene and every other gene frozen; kills shared equally."""
+    pack_size: int = 2
+    max_pred: int = 64  # slack, so the cap doesn't decide who breeds (stage 22b's home hunters held ~29 of 32)
+    founder_noise: float = 0.0
+    plant_sigma: float = 0.0
+    breed_random: bool = True
+    effort: str = "equal"
+
+
+@dataclass(frozen=True)
+class PackEffortPropConfig(PackEffortEqualConfig):
+    """Stage 23: kills shared in proportion to effort."""
+    effort: str = "prop"
+
+
+@dataclass(frozen=True)
+class PackEffortNeutralConfig(PackEffortEqualConfig):
+    """Stage 23's reference: the gene mutates the same way, but .5 stands in for it in catching, cost and sharing."""
+    effort: str = "neutral"
+
+
+@dataclass(frozen=True)
 class SignalConfig(PackConfig):
     """Stage 6b: the pack world, plus a signal that animals of the same species can see."""
     signals: bool = True
@@ -786,6 +856,14 @@ def _terrain(cfg: EvoConfig, key: jax.Array) -> jax.Array:
     return t
 
 
+def _office_terrain(cfg: EvoConfig, key: jax.Array) -> jax.Array:
+    """Stage 22: one of layouts office_seed .. office_seed + office - 1, as WALL cells on open ground."""
+    from simulations.office import office_bank
+    bank = jnp.asarray(office_bank(cfg.size, cfg.office_seed, cfg.office))
+    pick = jax.random.randint(jax.random.fold_in(key, 22), (), 0, cfg.office)
+    return jnp.where(bank[pick], jnp.int8(WALL), jnp.int8(0))
+
+
 def _open_positions(key, n, terrain):
     """n random open cells (with replacement) as (x, y)."""
     size = terrain.shape[0]
@@ -820,7 +898,9 @@ def reset(cfg: EvoConfig, key: jax.Array, pool: GenePool | None = None) -> State
     k_prey, k_pred, k_grown, k_found, k_draw, k_terrain = jax.random.split(key, 6)
     cells = cfg.size * cfg.size
     terrain = _terrain(cfg, k_terrain)
-    where = terrain if (cfg.walls or cfg.burrows) else None
+    if cfg.office:  # Stage 22: a fixed floor plan from the bank, picked by a key folded out of the reset key
+        terrain = _office_terrain(cfg, key)
+    where = terrain if (cfg.walls or cfg.burrows or cfg.office) else None
     if pool is None:
         prey = _spawn(cfg, k_prey, cfg.max_prey, cfg.init_prey, cfg.prey_start_energy, terrain=where)
         pred = _spawn(cfg, k_pred, cfg.max_pred, cfg.init_pred, cfg.pred_start_energy, terrain=where)
@@ -829,6 +909,12 @@ def reset(cfg: EvoConfig, key: jax.Array, pool: GenePool | None = None) -> State
                       pool.prey_genes, pool.prey_gen, pool.prey_w, terrain=where, pool_tag=pool.prey_tag)
         pred = _spawn(cfg, k_pred, cfg.max_pred, cfg.init_pred, cfg.pred_start_energy,
                       pool.pred_genes, pool.pred_gen, pool.pred_w, terrain=where, pool_tag=pool.pred_tag)
+    if cfg.dynasties:  # Stage 21: each founder its own family, so kin are the descendants of one founder in this world
+        prey = prey._replace(tag=jnp.arange(1, cfg.max_prey + 1, dtype=jnp.int32))
+        pred = pred._replace(tag=jnp.arange(1, cfg.max_pred + 1, dtype=jnp.int32))
+    if cfg.effort:  # Stage 23: every gene but a hunter's effort at the founder body
+        _check_effort(cfg)
+        prey, pred = effort_freeze(cfg, prey, False), effort_freeze(cfg, pred, True)
     plant = (jax.random.uniform(k_grown, (cfg.size, cfg.size)) < cfg.init_grass_frac) & (terrain == 0)
     plant_genes = _plant_founders(cfg, k_found, cells)
     if pool is not None:
@@ -968,7 +1054,9 @@ def camo_radius(g):
     return 4 - jnp.floor(3 * jnp.asarray(g) + 0.5).astype(jnp.int32)
 
 
-def observe(cfg: EvoConfig, state: State) -> tuple[jax.Array, jax.Array]:
+def observe(cfg: EvoConfig, state: State, prey_calls=None, pred_calls=None) -> tuple[jax.Array, jax.Array]:
+    """prey_calls, pred_calls (alarm worlds, evaluation only): the grazer calls that grazers and hunters hear instead of
+    state.prey_signal, for the shuffled-reception test."""
     maps = jnp.stack(
         [
             (state.plant & ~state.bitten).astype(jnp.float32),  # edible plants
@@ -978,9 +1066,15 @@ def observe(cfg: EvoConfig, state: State) -> tuple[jax.Array, jax.Array]:
         ],
         axis=-1,
     )
+    if cfg.signals and cfg.alarm:
+        raise ValueError("signals and alarm are two versions of the same channel; pick one")
     if cfg.signals:  # each species sees only its own signals
         heard = {"prey": pp._count_map(state.prey._replace(alive=state.prey.alive & state.prey_signal), cfg.size),
                  "pred": pp._count_map(state.pred._replace(alive=state.pred.alive & state.pred_signal), cfg.size)}
+    if cfg.alarm:  # Stage 21: both species can only ever hear grazers
+        own_call = {"prey": state.prey.alive & (state.prey_signal if prey_calls is None else prey_calls),
+                    "pred": state.prey.alive & (state.prey_signal if pred_calls is None else pred_calls)}
+        heard = {k: pp._count_map(state.prey._replace(alive=v), cfg.size) for k, v in own_call.items()}
     terrain = jnp.stack([state.terrain == WALL, state.terrain == BURROW], -1).astype(jnp.float32)
     r = cfg.view // 2
     offs = jnp.arange(-r, r + 1)
@@ -1031,6 +1125,13 @@ def observe(cfg: EvoConfig, state: State) -> tuple[jax.Array, jax.Array]:
         # Signals are calls: heard across the whole view, by day or night, unlike what is seen.
         parts = [w, own, ground, size] + ([pp._windows(heard[kind][..., None], sp.pos, cfg.view, cfg.size)]
                                           if cfg.signals else [])
+        if cfg.alarm:
+            h = pp._windows(heard[kind][..., None], sp.pos, cfg.view, cfg.size)
+            if kind == "prey":  # no one hears its own call
+                h = h.at[:, cfg.view // 2, cfg.view // 2, 0].add(-own_call["prey"].astype(h.dtype))
+            if (kind == "prey" and cfg.prey_deaf) or (kind == "pred" and not cfg.eavesdrop):
+                h = jnp.zeros_like(h)
+            parts.append(h)
         if cfg.hills:  # the height of each visible cell relative to the animal's own
             parts.append(jnp.where(seen, heights - h_self[:, None, None], 0.0)[..., None])
         if cfg.thickets > 0:  # where the thickets are, within sight
@@ -1048,11 +1149,11 @@ def observe(cfg: EvoConfig, state: State) -> tuple[jax.Array, jax.Array]:
 
 
 def obs_channels(cfg: EvoConfig) -> int:
-    return OBS_CHANNELS + int(cfg.signals) + int(cfg.hills) + int(cfg.thickets > 0) + int(cfg.fat_sense) + int(cfg.omnivore) + int(cfg.brains)
+    return OBS_CHANNELS + int(cfg.signals or cfg.alarm) + int(cfg.hills) + int(cfg.thickets > 0) + int(cfg.fat_sense) + int(cfg.omnivore) + int(cfg.brains)
 
 
 def num_actions(cfg: EvoConfig) -> int:
-    return NUM_ACTIONS * (2 if cfg.signals else 1)
+    return NUM_ACTIONS * (2 if (cfg.signals or cfg.alarm) else 1)
 
 
 GENE_NAMES = {"animal": ("speed", "sight", "breed", "size", "brain", "diet", "camo"), "plant": ("spread", "tough")}
@@ -1093,6 +1194,76 @@ class StepInfo(NamedTuple):
     pred_bites: jax.Array  # omnivore worlds: plants eaten by hunters
     pred_plant_gain: jax.Array  # energy hunters got from plants
     pred_meat_gain: jax.Array  # energy hunters got from catches
+    prey_calls: jax.Array  # Stage 21: grazers that called this step
+    prey_adj: jax.Array  # living grazers with a hunter within 1 cell before moving
+    prey_adj_calls: jax.Array  # ... of which called
+    effort: "EffortInfo | None" = None  # Stage 23: filled only in worlds with `effort` set
+
+
+class EffortInfo(NamedTuple):
+    """Stage 23, one world-step. Per hunter slot (max_pred,), then scalars. "e" is the effort the mechanics used (.5 in N)."""
+    e: jax.Array  # effort used
+    assigned: jax.Array  # int32: the grazer slot it was assigned to, -1 if none
+    group: jax.Array  # int32: hunters assigned to that grazer (0 if none)
+    contrib: jax.Array  # e / S for hunters in groups of at least pack_size, else 0
+    meal: jax.Array  # meal handed out this step
+    kept: jax.Array  # ... of which kept after the energy cap
+    caught: jax.Array  # bool: shared a catch
+    eligible: jax.Array  # hunters ready to breed (birth attempts)
+    blocked: jax.Array  # ... of which found no free slot
+    attempts: jax.Array  # grazers with at least pack_size assigned hunters
+    attempt_hunters: jax.Array  # hunters in those groups
+    catch_hunters: jax.Array  # hunters in groups that caught
+    lone: jax.Array  # hunters assigned to a grazer alone
+    meal_total: jax.Array
+    kept_total: jax.Array
+    free_kept: jax.Array  # kept meal of free-riders: share of the group's kept meal > share of its effort
+    free_riders: jax.Array  # hunters that free-rode this step
+    effort_paid: jax.Array
+    breed_dev: jax.Array  # over births: parent's effort gene minus the mean gene of living hunters in the world
+    cov_ee: jax.Array  # within-world sums over living hunters: (gene - mean)(energy - mean), (gene - mean)^2, (energy - mean)^2
+    var_e: jax.Array
+    var_energy: jax.Array
+    gene_sum: jax.Array  # effort gene over living hunters after the step, and its square
+    gene_sq: jax.Array
+    pred_extinct: jax.Array  # 1 if the world's hunters are all dead after the step (it restarts)
+    prey_extinct: jax.Array
+
+
+EFFORT = 5  # the gene slot that carries effort when `effort` is set
+EFFORT_MODES = ("", "equal", "prop", "neutral")
+
+
+def _check_effort(cfg: EvoConfig) -> None:
+    if cfg.effort not in EFFORT_MODES:
+        raise ValueError(f"effort must be one of {EFFORT_MODES}, not {cfg.effort!r}")
+    if cfg.effort and (cfg.omnivore or cfg.brains or cfg.pack_size < 2):
+        raise ValueError("effort needs pack_size >= 2 and omnivore and brains off (gene 5 must be inert otherwise)")
+
+
+def effort_used(cfg: EvoConfig, pred: Species) -> jax.Array:
+    """Stage 23: each hunter's effort as the mechanics see it: its gene, or .5 in the neutral arm."""
+    g = pred.genes[..., EFFORT]
+    return jnp.full_like(g, 0.5) if cfg.effort == "neutral" else g
+
+
+def effort_freeze(cfg: EvoConfig, sp: Species, keep_effort: bool) -> Species:
+    """Stage 23's mask: every gene at the founder body, except a hunter's effort."""
+    g = jnp.broadcast_to(jnp.asarray(cfg.founder_animal, jnp.float32), sp.genes.shape)
+    if keep_effort:
+        g = g.at[..., EFFORT].set(sp.genes[..., EFFORT])
+    return sp._replace(genes=g.astype(sp.genes.dtype))
+
+
+def pack_groups(cfg: EvoConfig, prey: Species, pred: Species):
+    """_pack_predation's assignment: (has a grazer, its index, hunters per grazer)."""
+    d = jnp.abs(pred.pos[:, None, :] - prey.pos[None, :, :])
+    d = jnp.minimum(d, cfg.size - d).max(-1)
+    near = (d <= 1) & pred.alive[:, None] & prey.alive[None, :]
+    has = near.any(axis=1)
+    choice = jnp.argmax(near, axis=1)
+    hunters = jnp.zeros(prey.alive.shape[0], jnp.int32).at[choice].add(has.astype(jnp.int32))
+    return has, choice, hunters
 
 
 THREAT = 3  # Chebyshev cells (wrapped) at which a predator counts as close
@@ -1189,7 +1360,7 @@ def _predation(cfg: EvoConfig, key, prey: Species, pred: Species) -> tuple[jax.A
     its cell and succeeds with catch_chance. Returns (caught, eaten, energy gained per predator):
     with sizes on, a meal is catch_energy * (0.5 + prey size)."""
     if cfg.pack_size > 1:
-        return _pack_predation(cfg, prey, pred)
+        return _pack_predation(cfg, prey, pred, key)
     if not (cfg.sizes and cfg.size_catch):
         caught, eaten = pp.predation(prey, pred)
         if cfg.stored_meals:  # the same choice pp.predation made: the lowest-index prey on the predator's cell
@@ -1213,17 +1384,14 @@ def _predation(cfg: EvoConfig, key, prey: Species, pred: Species) -> tuple[jax.A
     return caught, eaten, cfg.catch_energy * (1.0 if cfg.flat_meals else 0.5 + prey_size) * caught
 
 
-def _pack_predation(cfg: EvoConfig, prey: Species, pred: Species):
+def _pack_predation(cfg: EvoConfig, prey: Species, pred: Species, key=None):
     """Each predator hunts the lowest-index prey within one cell (wrapped Chebyshev); a prey with at
     least pack_size hunters is eaten, and they share a meal of pack_size * catch_energy. With flank on,
     the hunters must also include two exactly opposite each other through the prey (west and east,
-    north and south, or diagonal corners), so two hunters on the same side never count."""
-    d = jnp.abs(pred.pos[:, None, :] - prey.pos[None, :, :])
-    d = jnp.minimum(d, cfg.size - d).max(-1)
-    near = (d <= 1) & pred.alive[:, None] & prey.alive[None, :]
-    has = near.any(axis=1)
-    choice = jnp.argmax(near, axis=1)
-    hunters = jnp.zeros(prey.alive.shape[0], jnp.int32).at[choice].add(has.astype(jnp.int32))
+    north and south, or diagonal corners), so two hunters on the same side never count.
+    Stage 23 (`effort` set): such a prey is eaten with chance 1 - exp(-effort_k * S), S the summed effort of its
+    hunters, and the meal is split equally or in proportion to effort."""
+    has, choice, hunters = pack_groups(cfg, prey, pred)
     eaten = prey.alive & (hunters >= cfg.pack_size)
     if cfg.flank:
         off = pred.pos - prey.pos[choice]
@@ -1231,6 +1399,17 @@ def _pack_predation(cfg: EvoConfig, prey: Species, pred: Species):
         cell = jnp.where(has, (off[:, 0] + 1) * 3 + (off[:, 1] + 1), 4)  # 0..8 around the prey, 4 = its own cell
         occ = jnp.zeros((prey.alive.shape[0], 9), jnp.int32).at[choice, cell].max(has.astype(jnp.int32)) > 0
         eaten = eaten & (occ[:, :4] & occ[:, 8:4:-1]).any(-1)  # cell c and 8 - c are exact opposites
+    if cfg.effort:
+        e = effort_used(cfg, pred) * has
+        S = jnp.zeros(prey.alive.shape[0], jnp.float32).at[choice].add(e)
+        eaten = eaten & (jax.random.uniform(key, S.shape) < 1.0 - jnp.exp(-cfg.effort_k * S))
+        caught = has & eaten[choice]
+        total = cfg.pack_size * cfg.catch_energy
+        if cfg.effort == "prop":
+            meal = total * e / jnp.maximum(S[choice], 1e-9)
+        else:
+            meal = total / jnp.maximum(hunters[choice], 1)
+        return caught, eaten, jnp.where(caught, meal, 0.0)
     caught = has & eaten[choice]
     meal = cfg.pack_size * cfg.catch_energy / jnp.maximum(hunters[choice], 1)
     return caught, eaten, jnp.where(caught, meal, 0.0)
@@ -1265,6 +1444,9 @@ def _reproduce(cfg: EvoConfig, key, sp: Species, repro_energy: float, t=0) -> tu
         inherited = jnp.where(jax.random.bernoulli(k_cross, 0.5, sp.genes.shape), sp.genes, sp.genes[mate])
     free = ~sp.alive
     rank = jnp.cumsum(parents) - 1
+    if cfg.breed_random:  # Stage 23: ready parents take free slots in a random order, not slot order
+        score = jnp.where(parents, jax.random.uniform(jax.random.fold_in(key, 23), (n,)), jnp.inf)
+        rank = jnp.argsort(jnp.argsort(score))
     can = parents & (rank < free.sum())
     free_idx = jnp.nonzero(free, size=n, fill_value=0)[0]
     target = jnp.where(can, free_idx[jnp.clip(rank, 0, n - 1)], n)  # n = dropped
@@ -1355,9 +1537,12 @@ def advance(cfg: EvoConfig, key: jax.Array, state: State, prey_act, pred_act) ->
     k_prey, k_pred, k_graze, k_rprey, k_rpred, k_plant = jax.random.split(key, 6)
     prey, pred = state.prey, state.pred
     prey_was, pred_was = prey.alive, pred.alive
-    prey_sig = (prey_act >= NUM_ACTIONS) & prey_was if cfg.signals else jnp.zeros_like(prey_was)
-    pred_sig = (pred_act >= NUM_ACTIONS) & pred_was if cfg.signals else jnp.zeros_like(pred_was)
+    prey_sig = (prey_act >= NUM_ACTIONS) & prey_was if (cfg.signals or cfg.alarm) else jnp.zeros_like(prey_was)
+    pred_sig = (pred_act >= NUM_ACTIONS) & pred_was if cfg.signals else jnp.zeros_like(pred_was)  # alarm: hunters never call
     prey_act, pred_act = prey_act % NUM_ACTIONS, pred_act % NUM_ACTIONS
+    adj = hunter_adjacent(cfg, prey, pred) if cfg.alarm else jnp.zeros_like(prey_was)
+    if cfg.oracle_call:  # Stage 21b (spec 2026-11-05-oracle-call-design.md): the simulation calls, truthfully
+        prey_sig = adj & prey_was
 
     # 1. Movement; fast animals sometimes take two cells.
     terrain = state.terrain
@@ -1372,6 +1557,10 @@ def advance(cfg: EvoConfig, key: jax.Array, state: State, prey_act, pred_act) ->
         prey, pred = _walk(cfg, state.prey, prey), _walk(cfg, state.pred, pred)
 
     # 2. Predation.
+    if cfg.effort:
+        _check_effort(cfg)
+        e_used = effort_used(cfg, pred)
+        p_has, p_choice, p_hunters = pack_groups(cfg, prey, pred)  # the assignment _pack_predation makes
     caught, eaten, meal = _predation(cfg, jax.random.fold_in(k_pred, 7), prey, pred)
     meat_gain = meal * _kept(cfg, pred) * _meat_share(cfg, pred)
     pred = pred._replace(energy=pred.energy + meat_gain)
@@ -1395,22 +1584,59 @@ def advance(cfg: EvoConfig, key: jax.Array, state: State, prey_act, pred_act) ->
     # 4. Metabolism (with trait and signal costs) and caps.
     prey = prey._replace(energy=prey.energy - cfg.signal_cost * prey_sig)
     pred = pred._replace(energy=pred.energy - cfg.signal_cost * pred_sig)
-    prey = _metabolise(cfg, prey, cfg.prey_energy_cap, size_cost=cfg.prey_size_cost if cfg.prey_size_cost >= 0 else None)
+    if cfg.prey_no_upkeep:  # Stage 22b (spec 2026-11-05-office-prey-design.md): no upkeep, only the cap
+        prey = prey._replace(energy=jnp.where(prey.alive, jnp.minimum(prey.energy, cfg.prey_energy_cap), 0.0))
+    else:
+        prey = _metabolise(cfg, prey, cfg.prey_energy_cap, size_cost=cfg.prey_size_cost if cfg.prey_size_cost >= 0 else None)
+    if cfg.effort:  # what the cap will clip off this step, so the meal kept can be measured
+        pre_cap = pred.energy - _upkeep(cfg, pred.genes, cfg.pred_base_cost, cfg.pred_speed_cost if cfg.pred_speed_cost >= 0 else None,
+                                        cfg.pred_size_cost if cfg.pred_size_cost >= 0 else None) * pred.alive
+        kept = jnp.maximum(meat_gain - jnp.maximum(pre_cap - cfg.pred_energy_cap, 0.0), 0.0) * pred.alive
     pred = _metabolise(cfg, pred, cfg.pred_energy_cap, cfg.pred_base_cost, cfg.pred_speed_cost if cfg.pred_speed_cost >= 0 else None,
                        cfg.pred_size_cost if cfg.pred_size_cost >= 0 else None)
     if cfg.camo_gene:
         on = in_winter(cfg, state.t) if cfg.camo_winter else True
         pred = pred._replace(energy=pred.energy - cfg.camo_cost * pred.genes[:, 6] * pred.alive * on)
+    if cfg.effort:  # Stage 23: effort costs energy every step, after the cap
+        paid = cfg.effort_cost * e_used * pred.alive
+        pred = pred._replace(energy=pred.energy - paid)
 
     # 5. Starvation. Deaths are recorded before any slot is reused.
     prey = prey._replace(alive=prey.alive & (prey.energy > 0))
     pred = pred._replace(alive=pred.alive & (pred.energy > 0))
     prey_died = prey_was & ~prey.alive
     pred_died = pred_was & ~pred.alive
+    kin_deaths = kin_deaths_heard(cfg, prey, prey_died) if cfg.kin_share else None
 
     # 6. Reproduction with inherited, mutated genes.
+    if cfg.effort:  # before breeding: who is ready, and how effort and energy go together among the living
+        ready = pred.alive & (pred.energy >= cfg.pred_repro_energy * (0.5 + cfg.breed_span * pred.genes[:, 2]))
+        g, live = pred.genes[:, EFFORT], pred.alive.astype(jnp.float32)
+        n_live = jnp.maximum(live.sum(), 1.0)
+        g_dev = (g - (g * live).sum() / n_live) * live
+        en_dev = (pred.energy - (pred.energy * live).sum() / n_live) * live
     prey, prey_born, prey_parent = _reproduce(cfg, k_rprey, prey, cfg.prey_repro_energy, state.t)
     pred, pred_born, pred_parent = _reproduce(cfg, k_rpred, pred, cfg.pred_repro_energy, state.t)
+    effort_info = None
+    if cfg.effort:
+        prey, pred = effort_freeze(cfg, prey, False), effort_freeze(cfg, pred, True)  # children too: only effort mutates
+        attempt = p_has & (p_hunters[p_choice] >= cfg.pack_size)
+        S = jnp.zeros(state.prey.alive.shape[0], jnp.float32).at[p_choice].add(e_used * p_has)
+        contrib = jnp.where(attempt, e_used / jnp.maximum(S[p_choice], 1e-9), 0.0)
+        group_kept = jnp.zeros(S.shape, jnp.float32).at[p_choice].add(kept * caught)
+        meal_frac = kept / jnp.maximum(group_kept[p_choice], 1e-9)
+        free = caught & (meal_frac > contrib + 1e-6)
+        f32 = lambda x: jnp.sum(x).astype(jnp.float32)
+        pg = pred.genes[:, EFFORT] * pred.alive
+        effort_info = EffortInfo(
+            e=e_used, assigned=jnp.where(p_has, p_choice, -1).astype(jnp.int32),
+            group=jnp.where(p_has, p_hunters[p_choice], 0).astype(jnp.int32), contrib=contrib, meal=meat_gain, kept=kept,
+            caught=caught, eligible=f32(ready), blocked=f32(ready & ~pred_born),
+            attempts=f32(state.prey.alive & (p_hunters >= cfg.pack_size)), attempt_hunters=f32(attempt), catch_hunters=f32(caught),
+            lone=f32(p_has & (p_hunters[p_choice] == 1)), meal_total=f32(meat_gain), kept_total=f32(kept),
+            free_kept=f32(kept * free), free_riders=f32(free), effort_paid=f32(paid), breed_dev=f32(g_dev * pred_born),
+            cov_ee=f32(g_dev * en_dev), var_e=f32(g_dev ** 2), var_energy=f32(en_dev ** 2), gene_sum=f32(pg),
+            gene_sq=f32(pg * pred.genes[:, EFFORT]), pred_extinct=f32(~pred.alive.any()), prey_extinct=f32(~prey.alive.any()))
 
     # 7. Plants die, seed and germinate.
     plant, plant_genes, bitten = _plants(cfg, k_plant, plant, state.plant_genes, terrain == 0, bitten,
@@ -1462,18 +1688,39 @@ def advance(cfg: EvoConfig, key: jax.Array, state: State, prey_act, pred_act) ->
         prey_near=near, prey_near_burrow=near_hidden, prey_far=far, prey_far_burrow=far_hidden,
         good_bites=good_bites, bad_bites=bad_bites, eaten_energy=eaten_energy, eaten_baseline=eaten_baseline,
         pred_bites=pred_bites, pred_plant_gain=pred_plant_gain, pred_meat_gain=jnp.sum(meat_gain),
+        prey_calls=prey_sig.sum().astype(jnp.int32), prey_adj=adj.sum().astype(jnp.int32),
+        prey_adj_calls=(adj & prey_sig).sum().astype(jnp.int32),
+        effort=effort_info,
     )
     return pp.StepResult(
         # A slot that died this step is silent, even if a newborn took it.
         state=State(prey, pred, plant, plant_genes, t, terrain, bitten, prey_sig & ~prey_died, pred_sig & ~pred_died,
                     good, since_flip),
-        prey_reward=reward(prey_was, prey_died, prey_born),
+        prey_reward=reward(prey_was, prey_died, prey_born) + (
+            jnp.where(prey_was, cfg.kin_share * cfg.death_reward * kin_deaths, 0.0).astype(jnp.float32) if cfg.kin_share else 0.0),
         pred_reward=reward(pred_was, pred_died, pred_born),
         prey_done=prey_died | ~prey_was | done,
         pred_done=pred_died | ~pred_was | done,
         done=done,
         info=info,
     )
+
+
+def hunter_adjacent(cfg: EvoConfig, prey: Species, pred: Species, radius: int = 1) -> jax.Array:
+    """(max_prey,) bool: a living grazer with a living hunter within `radius` cells (wrapped Chebyshev)."""
+    d = jnp.abs(prey.pos[:, None, :] - pred.pos[None, :, :])
+    d = jnp.minimum(d, cfg.size - d).max(-1)
+    return prey.alive & ((d <= radius) & pred.alive[None, :]).any(-1)
+
+
+def kin_deaths_heard(cfg: EvoConfig, prey: Species, died) -> jax.Array:
+    """Stage 21: for each grazer, how many other grazers of its dynasty (same tag) died this step within hearing
+    (wrapped Chebyshev view // 2 of where they died). Call before reproduction reuses the dead slots."""
+    d = jnp.abs(prey.pos[:, None, :] - prey.pos[None, :, :])
+    d = jnp.minimum(d, cfg.size - d).max(-1)
+    n = prey.alive.shape[0]
+    kin = (prey.tag[:, None] == prey.tag[None, :]) & ~jnp.eye(n, dtype=bool) & (d <= cfg.view // 2)
+    return (kin & died[None, :]).sum(1).astype(jnp.float32)
 
 
 def batch_step(cfg: EvoConfig, key: jax.Array, states: State, prey_act, pred_act):
@@ -1521,7 +1768,38 @@ def extra_metrics(info: StepInfo) -> dict:
     out["good_bite_share"] = info.good_bites.sum() / jnp.maximum((info.good_bites + info.bad_bites).sum(), 1)
     out["fat_selectivity"] = info.eaten_energy.sum() / jnp.maximum(info.eaten_baseline.sum(), 1e-6)
     out["pred_plant_share"] = info.pred_plant_gain.sum() / jnp.maximum((info.pred_plant_gain + info.pred_meat_gain).sum(), 1e-6)
+    out["prey_call_rate"] = info.prey_calls.sum() / jnp.maximum(info.prey_alive.sum(), 1)  # per living grazer after the step
+    out["prey_call_adj"] = info.prey_adj_calls.sum() / jnp.maximum(info.prey_adj.sum(), 1)
+    out["prey_call_far"] = (info.prey_calls - info.prey_adj_calls).sum() / jnp.maximum(info.prey_alive.sum() - info.prey_adj.sum(), 1)
+    if info.effort is not None:
+        out.update(effort_metrics(info))
     return out
+
+
+def effort_metrics(info: StepInfo) -> dict:
+    """Stage 23's per-update numbers, from stacked StepInfo (effort worlds only). Gene 5 is reported as effort here."""
+    x = info.effort
+    s = lambda a: a.sum().astype(jnp.float32)
+    div = lambda a, b: s(a) / jnp.maximum(s(b), 1e-9)
+    hunter_steps = s(info.pred_alive)
+    mean = div(x.gene_sum, info.pred_alive)
+    return {
+        "pred_effort": mean,
+        "pred_effort_std": jnp.sqrt(jnp.maximum(div(x.gene_sq, info.pred_alive) - mean ** 2, 0.0)),
+        "birth_eligible": s(x.eligible), "birth_blocked": s(x.blocked), "blocked_share": div(x.blocked, x.eligible),
+        "pred_births": s(info.pred_births), "pred_starved": s(info.pred_deaths), "hunter_steps": hunter_steps,
+        "breed_dev": div(x.breed_dev, info.pred_births), "breed_dev_sum": s(x.breed_dev),
+        "effort_energy_corr": s(x.cov_ee) / jnp.maximum(jnp.sqrt(s(x.var_e) * s(x.var_energy)), 1e-9),
+        "cov_ee": s(x.cov_ee), "var_e": s(x.var_e), "var_energy": s(x.var_energy),
+        "attempts": s(x.attempts), "attempt_hunters": s(x.attempt_hunters), "catch_hunters": s(x.catch_hunters),
+        "catches": s(info.catches), "lone_assigned": s(x.lone),
+        "catch_share_of_attempts": div(info.catches, x.attempts),
+        "group_size_catch": div(x.catch_hunters, info.catches), "group_size_attempt": div(x.attempt_hunters, x.attempts),
+        "meal_total": s(x.meal_total), "kept_total": s(x.kept_total), "clipped_share": 1.0 - div(x.kept_total, x.meal_total),
+        "free_kept_share": div(x.free_kept, x.kept_total), "free_riders": s(x.free_riders), "effort_paid": s(x.effort_paid),
+        "pred_extinct_restarts": s(x.pred_extinct), "prey_extinct_restarts": s(x.prey_extinct),
+        "catches_per_hunter_step": div(info.catches, info.pred_alive),
+    }
 
 
 def reset_mixed(cfg: EvoConfig, key: jax.Array, pool: GenePool, genes=None) -> State:

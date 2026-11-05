@@ -16,6 +16,12 @@ WORLDS = {
     "niches": (evo, evo.NichesConfig),
     "pack": (evo, evo.PackConfig),
     "signals": (evo, evo.SignalConfig),
+    "alarm": (evo, evo.AlarmConfig),
+    "office_home": (evo, evo.OfficeHomeConfig),
+    "office": (evo, evo.OfficeConfig),
+    "pack_effort_equal": (evo, evo.PackEffortEqualConfig),  # Stage 23
+    "pack_effort_prop": (evo, evo.PackEffortPropConfig),
+    "pack_effort_neutral": (evo, evo.PackEffortNeutralConfig),
     "flank": (evo, evo.FlankConfig),
     "flank_signals": (evo, evo.FlankSignalConfig),
     "pack_brains": (evo, evo.PackBrainsConfig),

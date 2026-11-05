@@ -5,6 +5,7 @@ their culture: children are born blank and take lessons. --both-live does the sa
 scripts.train (--founder), whose one brain goes to every hunter. Written to <grazers>/cross_<hunters>.json.
 Stage 20: --world-set changes the test world (which is the grazers' run's), --bodies gives hunters another run's body genes,
 --eval-seed reruns the test on other worlds, and the result adds total catches and what hunters pay per step for their bodies.
+Stage 20b: --hunter-ckpt tests a population kept part way through training (train_indiv --keep-at).
 Spec: docs/specs/2026-11-01-head-to-head-design.md
 """
 from __future__ import annotations
@@ -45,6 +46,7 @@ def main(argv=None) -> int:
     p.add_argument("--world-set", action="append", default=[], metavar="KEY=VALUE", help="Stage 20: change a field of the test world's config, repeatable")
     p.add_argument("--bodies", default=None, help="Stage 20: hunters take their body genes from this run instead of --hunters (brains still from --hunters)")
     p.add_argument("--eval-seed", type=int, default=EVAL_SEED, help="Stage 20: worlds to test on; the usual test uses EVAL_SEED")
+    p.add_argument("--hunter-ckpt", default="pop_latest.npz", help="Stage 20b: which of --hunters' kept populations to test (pop_u0200.npz)")
     args = p.parse_args(argv)
 
     hunters, grazers = Path(args.hunters), Path(args.grazers)
@@ -66,7 +68,7 @@ def main(argv=None) -> int:
         one = load_brains(hunters / "checkpoints" / "latest.msgpack", template)[1]
         pred = tile(one, E, wcfg.max_pred, k_pred, 0.0)
     else:
-        snap_h = dict(np.load(hunters / "checkpoints" / "pop_latest.npz"))
+        snap_h = dict(np.load(hunters / "checkpoints" / args.hunter_ckpt))
         if args.births:
             snap_h = {k.replace("pred_birth_", "pred_") if k.startswith("pred_birth_") else k: v for k, v in snap_h.items() if not (k.startswith("pred_") and not k.startswith("pred_birth_"))} | {k: v for k, v in snap_h.items() if k.startswith("pred_birth_")}
         pred = frozen(snap_h, "pred", template, E, wcfg.max_pred, k_pred)
@@ -113,7 +115,7 @@ def main(argv=None) -> int:
            "hunters_at_end": float(carry.state.pred.alive.sum(-1).mean()), "grazers_at_end": float(carry.state.prey.alive.sum(-1).mean()),
            "both_alive": float((carry.state.pred.alive.any(-1) & carry.state.prey.alive.any(-1)).mean()),
            "catches": catches, "hunter_steps": hunter_steps, "hunters_alive_at_end_frac": float(carry.state.pred.alive.any(-1).mean()),
-           "eval_seed": args.eval_seed, "world_set": args.world_set, "bodies": args.bodies}
+           "eval_seed": args.eval_seed, "world_set": args.world_set, "bodies": args.bodies, "hunter_ckpt": args.hunter_ckpt}
     if upkeep_of:  # body upkeep per hunter-step, from the hunters alive at the start of each step
         out["upkeep_per_hunter_step"] = paid / max(alive_steps, 1.0)
         out["break_even_catches_per_hunter_step"] = out["upkeep_per_hunter_step"] / wcfg.catch_energy

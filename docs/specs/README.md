@@ -68,6 +68,12 @@ replaced with neutral wording; the engineering and the results are unchanged.
 | [Slow, blind ambush](2026-11-02-slow-blind-ambush-design.md) | 18b: does an ambush predator evolve poor sight and slow legs? | FAIL on the living |
 | [Hall of fame](2026-11-04-hall-of-fame-design.md) | 19: was the problem the opponent? Evolution alone against grazers that stay trained | FAIL on all three bars, at about 1.5x random |
 | [Visible selection](2026-11-04-visible-selection-design.md) | 20: was stage 19's plateau the search, or a selection that couldn't see better brains? | FAIL on bar 1, bars 2 and 3 pass; with bodies frozen the plateau didn't appear |
+| [Whose bodies](2026-11-04-whose-bodies-design.md) | 20b: whose changing bodies held evolution back, and does it keep improving? | mixed: freezing both bodies passes, either alone fails; skill keeps rising |
+| [Alarm calls](2026-11-04-alarm-calls-design.md) | 21: do grazers invent an alarm call, and do hunters learn to eavesdrop? | FAIL on all four bars |
+| [Oracle call](2026-11-05-oracle-call-design.md) | 21b: would grazers have listened if anyone had spoken? | PASS on every seed: listeners use an automatic, true call |
+| [Office](2026-11-05-office-design.md) | 22: new places, the office | PASS on both bars; bar 1 confounded by scarce prey until 22b |
+| [Office prey](2026-11-05-office-prey-design.md) | 22b: is the office loss lost skill, or just scarcer prey? | PASS on both seeds: it's lost skill |
+| [Packs with cheaters](2026-11-05-pack-cheaters-design.md) | 23: does equal sharing of a kill select lower hunter effort? | stopped at the pilot gate, not a pass or a fail: no free slots for selection |
 | [Dynasties](2026-11-04-dynasties-design.md) | A lineage tracer: named family lines, exact causes of death, and replays to follow them | not a test: a tool |
 
 The league and predator-stall work of Stage 3b is written up in the [roadmap](../roadmap.md).

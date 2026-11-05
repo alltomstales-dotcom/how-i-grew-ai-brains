@@ -4,7 +4,7 @@ Date: 2026-11-04. Written before any of these runs, the pilot included.
 
 ## Why
 
-Stage 19's anchored hunters rose from random to about 1.5x random against trained grazers in about 150 updates, then stayed flat for 800. Its spec read that as "the search's limit here". Both reviews (`docs/reviews/2026-11-04-next-stage-fable.md`, `-astra.md`) say that doesn't follow, and Fable names a competing reason: at stage 19's catch rates a hunter at 1.5x random earns about .019 x 25 = 0.48 energy a step against upkeep of 0.5 or more, so it starves on the same clock as one at 1.0x. Worlds sat at the restart floor (about 7 hunters a world). If being better barely changes how long a hunter lives or how often it breeds, selection can't see better brains even if mutation offers them.
+Stage 19's anchored hunters rose from random to about 1.5x random against trained grazers in about 150 updates, then stayed flat for 800. Its spec read that as "the search's limit here". Both reviews (reviews, not published) say that doesn't follow, and Fable names a competing reason: at stage 19's catch rates a hunter at 1.5x random earns about .019 x 25 = 0.48 energy a step against upkeep of 0.5 or more, so it starves on the same clock as one at 1.0x. Worlds sat at the restart floor (about 7 hunters a world). If being better barely changes how long a hunter lives or how often it breeds, selection can't see better brains even if mutation offers them.
 
 **Question: if a better hunter breeds and a random one doesn't, does evolution keep climbing past stage 19's plateau?** If yes, the plateau was selection. If no, it was the search (or this brain, or sigma).
 

@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import shutil
 import time
 from dataclasses import asdict, replace
 from pathlib import Path
@@ -16,6 +17,7 @@ import jax.numpy as jnp
 import numpy as np
 
 from agents.checkpoint import load_brains
+from agents.freeze import FREEZE, freeze_world
 from agents.indiv import CULTURE, Carry, IndivConfig, MODES, anchor, anchored_worlds, blank_brain, fresh_kin, from_pool, make_step, spread, tile
 from agents.networks import init_params
 from simulations.worlds import get_world, make_net, obs_channels, world_set
@@ -64,10 +66,14 @@ def main(argv=None) -> int:
     p.add_argument("--anchor-pool", default=None, help="Stage 19: a train_indiv run whose living grazers' brains are the frozen pool")
     p.add_argument("--world-set", action="append", default=[], metavar="KEY=VALUE", help="Stage 20: change a field of the world's config, repeatable (pred_base_cost=0.1, gene_sigma=0)")
     p.add_argument("--ckpt-every", type=int, default=15)
+    p.add_argument("--freeze-bodies", default="none", choices=FREEZE, help="Stage 20b: these species keep the founder body all run")
+    p.add_argument("--keep-at", default="", help="Stage 20b: comma-separated updates whose population is also kept, as pop_u0200.npz and genes_u0200.npz")
     p.add_argument("--tiny", action="store_true", help="a tiny world, for tests")
     args = p.parse_args(argv)
 
     world, cls = get_world(args.world)
+    world = freeze_world(world, args.freeze_bodies)
+    keep = {int(x) for x in args.keep_at.split(",") if x.strip()}
     wcfg = cls()
     if args.tiny:
         wcfg = replace(wcfg, size=12, max_prey=8, max_pred=4, init_prey=4, init_pred=2, max_steps=20)
@@ -146,8 +152,11 @@ def main(argv=None) -> int:
             for name, kin in (("pred", carry.pred_kin), ("prey", carry.prey_kin)):
                 row[f"{name}_child_steps"], row[f"{name}_lessons"], row[f"{name}_agree"] = float(kin.child_steps), float(kin.lessons), float(kin.agree)
         log.write(json.dumps(row) + "\n"); log.flush()
-        if u % args.ckpt_every == 0 or u == args.updates:
+        if u % args.ckpt_every == 0 or u == args.updates or u in keep:
             save_population(run_dir / "checkpoints" / "pop_latest.npz", carry, world)
+            if u in keep:
+                for name in ("pop", "genes"):
+                    shutil.copy(run_dir / "checkpoints" / f"{name}_latest.npz", run_dir / "checkpoints" / f"{name}_u{u:04d}.npz")
             print(f"update {u} sps {row['sps']:.0f} prey {row['prey_alive']:.1f} pred {row['pred_alive']:.1f} catches/step {row['catches_per_step']:.3f} spread {row['pred_weight_spread']:.4f} moved {row['pred_weight_moved']:.4f}", flush=True)
     (run_dir / "done.json").write_text(json.dumps({"updates": args.updates}))
     return 0

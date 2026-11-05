@@ -82,6 +82,8 @@ def parse_args(argv):
     p.add_argument("--learners", choices=("both", "prey", "pred"), default="both",
                    help="which species learns; the other keeps the brain it starts with")
     p.add_argument("--init-from", default=None, help="checkpoint to start both brains from")
+    p.add_argument("--init-prey", default=None, help="checkpoint to take the grazer brain from (after --init-from)")
+    p.add_argument("--init-pred", default=None, help="checkpoint to take the hunter brain from (after --init-from)")
     p.add_argument("--set", action="append", default=[], metavar="FIELD=VALUE",
                    help="override a world setting, e.g. --set burrows=64 (repeatable)")
     p.add_argument("--memory", type=int, default=0, help="GRU size for brains with memory (0 = feed-forward)")
@@ -157,6 +159,11 @@ def main(argv=None) -> int:
         runner = runner._replace(prey=runner.prey._replace(params=prey_p),
                                  pred=runner.pred._replace(params=pred_p))
         print(f"brains from {args.init_from} (update {meta.get('update')})", flush=True)
+    for who, path in (("prey", args.init_prey), ("pred", args.init_pred)):  # Stage 21: each species from its own run
+        if path:
+            brains = load_brains(path, getattr(runner, who).params)
+            runner = runner._replace(**{who: getattr(runner, who)._replace(params=brains[0 if who == "prey" else 1])})
+            print(f"{who} brain from {path} (update {brains[2].get('update')})", flush=True)
     steps_per_update = tcfg.num_envs * tcfg.rollout_len
     crossing = None
     if args.transit_dir:  # Stage 11a: animals cross to the next continent between updates
